@@ -6,26 +6,13 @@
 ---
 cff-version: "1.2.0"
 abstract: >-
-  All-in-one Python template. One click. Everything included.
+  Commit-based semantic versioning — verifiable, immutable, and tag-free.
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: "open-nudge"
-url: "https://github.com/open-nudge/opentemplate"
-repository-code: "https://github.com/open-nudge/opentemplate"
-title: "opentemplate"
+url: "https://github.com/open-nudge/comver"
+repository-code: "https://github.com/open-nudge/comver"
+title: "comver"
 license: "Apache-2.0"
 keywords:
   - "python"
-  - "template"
-  - "open source"
-  - "security"
-  - "automation"
-  - "developer experience"
-  - "devsec"
-  - "devsecops"
-  - "best practices"
-  - "hardening"
-  - "nudge"
-  - "github actions"
-  - "sbom"
-  - "attestation"
