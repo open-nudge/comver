@@ -73,6 +73,8 @@ Semantic versioning based on Git tags has a few limitations:
     [__Double versioning scheme__](https://open-nudge.github.io/comver/tutorials/why);
     one version for technical changes, another for public releases is
     a viable mitigation.
+- Tag creation by `bot`s (e.g. during automated releases) lead to problems
+    with `branch protection` (see [here](https://github.com/orgs/community/discussions/25305)).
 - Not all commits are relevant for release versions
     (e.g., CI changes, bot updates, or tooling config),
     yet many schemes count them in. With filtering, `comver` can exclude
