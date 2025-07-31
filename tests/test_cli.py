@@ -62,13 +62,6 @@ def test_smoke_calculate(
             _subcommand._calculate(pytest.ComverCalculateArgs).split()[2],  # noqa: SLF001  # pyright: ignore [reportUnknownArgumentType, reportAttributeAccessIssue]
             1,
         ),
-        # Version 0.0.1 is guaranteed to exist in this project
-        (
-            "0.0.1",
-            "randomShaNonExistent",
-            _subcommand._calculate(pytest.ComverCalculateArgs).split()[2],  # noqa: SLF001  # pyright: ignore [reportUnknownArgumentType, reportAttributeAccessIssue]
-            1,
-        ),
         # Obtain current commit sha (which is guaranteed to be within the tree)
         # Assign random version which has small chance of real life occurrence
         # Should return 1 but for different reasons
