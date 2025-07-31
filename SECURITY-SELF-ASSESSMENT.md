@@ -56,11 +56,15 @@ Source: https://tag-security.cncf.io/community/assessments/guide/self-assessment
 
 ## Overview
 
-Commit-based semantic versioning — verifiable, immutable, and tag-free.
+Commit-based semantic versioning - highly configurable and tag-free.
 
 ### Background
 
-TBD
+Tool creating versions directly from commits (no tag creation, no tag usage),
+which makes it largely immutable.
+
+Usable with any language as long as the project is git based, but
+created in and tailored largely towards Python.
 
 ### Actors
 
@@ -69,15 +73,18 @@ TBD
 
 ### Actions
 
-TBD
+- All security features are provided by
+    [opentemplate](https://github.com/open-nudge/opentemplate) [](templateskip)
 
 ### Goals
 
-TBD
+Making [semantic versioning](https://semver.org/) more reliable
+and flexible by introducing double versioning scheme.
 
 ### Non-goals
 
-TBD
+Changing current software versioning standards; this project looks to build
+upon them and improve the weak points.
 
 ## Self-assessment use
 
@@ -147,7 +154,9 @@ file.
 
 ### Incident response
 
-TBD
+As defined in [`SECURITY.md`](https://github.com/open-nudge/cogeol/blob/master/SECURITY.md#reporting-a-vulnerability.),
+usually response should take up to a few working days, if not please reach out
+at `security@opennudge.com`.
 
 ## Appendix
 

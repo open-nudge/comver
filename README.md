@@ -14,7 +14,7 @@ SPDX-License-Identifier: Apache-2.0
 <!-- pyml disable-num-lines 30 line-length-->
 
 <p align="center">
-    <em>Commit-based semantic versioning — verifiable, immutable, and tag-free.</em>
+    <em>Commit-based semantic versioning - highly configurable and tag-free.</em>
 </p>
 
 <div align="center">
