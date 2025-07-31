@@ -511,7 +511,8 @@ class Version:
         if unrecognized_message == "error":
             raise error.MessageUnrecognizedError(message)
 
-        return version
+        # Based on hypothesis testing this line may not run
+        return version  # pragma: no cover
 
     @classmethod
     def from_string(cls, version: str) -> Version:

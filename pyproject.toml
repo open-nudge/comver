@@ -14,7 +14,7 @@ requires = [
 [project]
 name = "comver"
 
-description = "Commit-based semantic versioning — verifiable, immutable, and tag-free."
+description = "Commit-based semantic versioning - highly configurable and tag-free."
 readme = "README.md"
 
 license = "Apache-2.0"
@@ -426,6 +426,7 @@ ignore_undeclared = [
 ]
 
 ignore_unused = [
+  "hatchling",
   "basedpyright",
   "cairosvg",
   "cffconvert",
