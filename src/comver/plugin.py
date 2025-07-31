@@ -14,10 +14,10 @@ __Currently supported third party tools:__
 - [`hatch`](https://hatch.pypa.io/1.9/plugins/version-source/reference/)
     package manager.
 
-> [!CAUTION]
-> Check out guidelines and tutorials for information about CLI/plugin
-> usage and suggested configuration. This section should be of interest
-> to people wanting to use the API directly (e.g. new integrations).
+Warning:
+    Check out guidelines and tutorials for information about CLI/plugin
+    usage and suggested configuration. This section should be of interest
+    to people wanting to use the API directly (e.g. new integrations).
 
 """
 
@@ -70,10 +70,10 @@ def pdm(  # noqa: PLR0913
 
     This function uses
     [`Version.from_git_configured`][comver._version.Version.from_git_configured]
-    under the hood, __but only outputs the last version of `iterable`__.
+    under the hood, __but only outputs the last yielded version `iterable`__.
 
-    > [!IMPORTANT]
-    > Plugin can be configured by `[tool.comver]` section.
+    Tip:
+        Plugin can be configured by `[tool.comver]` section.
 
     Args:
         message_includes:
@@ -159,16 +159,17 @@ if find_spec("hatchling"):
         and allows integration of the `comver` plugin with Hatch-based
         projects.
 
-        > [!TIP]
-        > See [plugins](https://hatch.pypa.io/1.13/plugins/version-source/reference/)
-        > for more information
+        Tip:
+            See [plugins](https://hatch.pypa.io/1.13/plugins/version-source/reference/)
+            for more information
 
         This function uses
         [`Version.from_git_configured`][comver._version.Version.from_git_configured]
-        under the hood, __but only outputs the last version of `iterable`__.
+        under the hood, __but only outputs the last version
+        yielded from `iterable`__.
 
         > [!IMPORTANT]
-        > Plugin can be configured by `[tool.hatch.version]`, not only
+        > Plugin can also be configured by `[tool.hatch.version]`, not only
         > `[tool.comver`]. The former takes precedence if both exist.
 
         """
@@ -224,7 +225,11 @@ if find_spec("hatchling"):
 
     @hookimpl
     def hatch_register_version_source() -> type[ComverVersionSource]:
-        """Register hatchling plugin.
+        """Automatically register hatchling plugin.
+
+        Note:
+            This function is called implicitly to register
+            `comver` for `hatchling` backend.
 
         Returns:
             ComverVersionSource class

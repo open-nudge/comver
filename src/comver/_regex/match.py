@@ -21,14 +21,14 @@ def item(
 ) -> bool:
     """Check if the `what` is included based on the `include` and `exclude`.
 
-    > [!IMPORTANT]
-    > Empty `include` are treated as include-everything.
+    Note:
+        Empty `include` are treated as include-everything.
 
-    > [!IMPORTANT]
-    > Empty `exclude` are treated as include-everything.
+    Note:
+        Empty `exclude` are treated as include-everything.
 
-    > [!IMPORTANT]
-    > Exclude regexes take precedence over include regexes.
+    Warning:
+        Exclude regexes take precedence over include regexes.
 
     Args:
         what:
@@ -56,10 +56,12 @@ def path(
 
     Note:
         Empty `include` are treated as include-everything.
-        Empty `exclude` are treated as include-everything as well.
 
     Note:
-        exclude regexes take precedence over include regexes.
+        Empty `exclude` are treated as include-everything.
+
+    Warning:
+        Exclude regexes take precedence over include regexes.
 
     Args:
         commit:

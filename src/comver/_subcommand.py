@@ -7,9 +7,13 @@
 
 from __future__ import annotations
 
+import collections
+import hashlib
 import json
 import sys
 import typing
+
+import loadfig
 
 from comver._version import Version, VersionCommit
 
@@ -50,7 +54,7 @@ def verify(args: argparse.Namespace) -> typing.NoReturn:
     sys.exit(_verify(args))
 
 
-def _calculate(args: argparse.Namespace) -> str:
+def _calculate(args: argparse.Namespace) -> str:  # noqa: C901
     """Implementation of calculate cli command.
 
     Args:
@@ -68,17 +72,22 @@ def _calculate(args: argparse.Namespace) -> str:
         pass
 
     sha = version.commit.hexsha if version.commit is not None else None
+    checksum = _checksum_config()
 
     version = str(version.version)
 
     if args.format == "line":
         if args.sha:
-            return f"{version} {sha}"
+            version = f"{version} {sha}"
+        if args.checksum:
+            version = f"{version} {checksum}"
         return version
 
     output = {"version": str(version)}
     if args.sha and isinstance(sha, str):
         output["sha"] = sha
+    if args.checksum:
+        output["checksum"] = checksum
 
     return json.dumps(output, indent=4)
 
@@ -86,8 +95,8 @@ def _calculate(args: argparse.Namespace) -> str:
 def _verify(args: argparse.Namespace) -> bool:
     """Verify commit sha and inferred version match.
 
-    > [!CAUTION]
-    > This subcommand also outputs messages for the end user
+    Warning:
+        This subcommand also outputs messages for the end user
 
     Args:
         args:
@@ -98,6 +107,15 @@ def _verify(args: argparse.Namespace) -> bool:
         on successful verification).
 
     """
+    checksum = _checksum_config()
+
+    if args.checksum != checksum:
+        print(  # noqa: T201
+            "Provided checksum and the checksum of configuration do not match.",
+            file=sys.stderr,
+        )
+        return True
+
     for output in Version.from_git_configured():
         version, commit = output.version, output.commit
 
@@ -125,3 +143,32 @@ def _verify(args: argparse.Namespace) -> bool:
         file=sys.stderr,
     )
     return True
+
+
+def _checksum_config() -> str:
+    """Get checksum of config.
+
+    Returns:
+        Checksum of subconfig.
+
+    """
+    config = collections.defaultdict(lambda: None, loadfig.config("comver"))
+    keys = [
+        "message_includes",
+        "message_excludes",
+        "path_includes",
+        "path_excludes",
+        "author_name_includes",
+        "author_name_excludes",
+        "author_email_includes",
+        "author_email_excludes",
+        "major_regexes",
+        "minor_regexes",
+        "patch_regexes",
+        "unrecognized_message",
+    ]
+
+    # Get only relevant sections of the dict
+    subconfig = {k: config[k] for k in keys}
+    stringified = json.dumps(subconfig, sort_keys=True)
+    return hashlib.sha256(stringified.encode()).hexdigest()

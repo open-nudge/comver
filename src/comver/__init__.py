@@ -3,16 +3,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""comver official documentation.
+"""comver internal API reference.
 
 This section of documentation should be mainly considered by people who:
 
 - are curious how the project works under the hood
 - want to provide integration of `comver` with third part tooling.
 
-> [!CAUTION]
-> Check out guidelines and tutorials for information about CLI/plugin
-> as this is a more common starting point.
+Important:
+    Check out guidelines and tutorials for information about CLI/plugin
+    as this is a more common starting point.
 
 """
 

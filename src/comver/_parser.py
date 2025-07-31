@@ -79,7 +79,16 @@ def _calculate(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUn
         "--sha",
         action="store_true",
         required=False,
-        help="Return sha of the commit related to the version",
+        help=(
+            "Return sha of the commit related to the version (usable for verification)"
+        ),
+    )
+
+    parser.add_argument(
+        "--checksum",
+        action="store_true",
+        required=False,
+        help="Return checksum of the configuration (usable for verification)",
     )
 
 
@@ -107,12 +116,17 @@ def _verify(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUnkno
 
     parser.add_argument(
         "version",
-        help="Version to check (e.g. `1.37.21`)",
+        help="Version to check (e.g. `1.37.21`).",
     )
 
     parser.add_argument(
         "sha",
-        help="Sha of the commit to compare against",
+        help="Sha of the commit to compare against.",
+    )
+
+    parser.add_argument(
+        "checksum",
+        help="Checksum of the configuration to check against.",
     )
 
     return parser

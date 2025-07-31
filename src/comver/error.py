@@ -60,10 +60,10 @@ class VersionNotNumericError(ComverError):
     e.g. `7.23.1`. This error is raised, if there is a version like
     `1.2.0a1`.
 
-    > [!CAUTION]
-    > Only
-    > [semantic Python versioning](https://packaging.python.org/en/latest/discussions/versioning/)
-    > is allowed, e.g. no `1.2.0a1` for alpha releases
+    Warning:
+        Only
+        [semantic Python versioning](https://packaging.python.org/en/latest/discussions/versioning/)
+        is allowed, e.g. no `1.2.0a1` for alpha releases
 
     """
 

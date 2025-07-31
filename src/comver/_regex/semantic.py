@@ -38,15 +38,11 @@ def components(
 
     Args:
         major_regexes:
-            The regexes by which the major version is found.
-            Default: From config OR matches `feat!:` and `fix!:`
-            messages OR `BREAKING CHANGE` anywhere in the message.
+            The regexes finding the `major` version.
         minor_regexes:
-            The regex for the minor version.
-            Default: From config OR matches messages starting with `feat:`.
+            The regexes finding the `minor` version.
         patch_regexes:
-            The regex for the patch version.
-            Default: From config OR matches messages starting with `fix:`.
+            The regexes finding the `patch` version.
 
     Returns:
         Dictionary mapping element of semantic versioning to the regex.
@@ -64,8 +60,7 @@ def major(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
 
     Args:
         regexes:
-            Specified `major` version element regexes,
-            if any.
+            Specified `major` version element regexes.
 
     Returns:
         Compiled regular expression (either default or provided).
@@ -79,8 +74,7 @@ def minor(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
 
     Args:
         regexes:
-            Specified `minor` version element regexes,
-            if any.
+            Specified `minor` version element regexes.
 
     Returns:
         Compiled regular expression (either default or provided).
@@ -94,8 +88,7 @@ def patch(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
 
     Args:
         regexes:
-            Specified `patch` version element regexes,
-            if any.
+            Specified `patch` version element regexes.
 
     Returns:
         Compiled regular expression (either default or provided).

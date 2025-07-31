@@ -67,6 +67,7 @@ pytest.ComverVersionTester = ComverVersionTester  # pyright: ignore [reportAttri
 
 ARGS = argparse.Namespace()
 ARGS.sha = True
+ARGS.checksum = True
 ARGS.format = "line"
 pytest.ComverCalculateArgs = ARGS  # pyright: ignore [reportAttributeAccessIssue]
 """Hack making CLI args for calculate subcommand globally available."""

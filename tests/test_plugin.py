@@ -98,7 +98,7 @@ def _hatchling(repository: str, **kwargs: dict[str, list[str] | None]) -> str:
     ).get_version_data()["version"]
 
 
-@pytest.mark.parametrize("plugin", (comver.plugin.pdm, _hatchling))  # pyright: ignore [reportUnknownArgumentType]
+@pytest.mark.parametrize("plugin", (comver.plugin.pdm, _hatchling))
 @pytest.mark.parametrize("message_includes", (None, (".*", "whatever")))
 @pytest.mark.parametrize("message_excludes", (None, (r".*\[no version\].*",)))
 @pytest.mark.parametrize("path_includes", (None, (".*", "whatever")))

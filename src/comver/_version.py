@@ -15,10 +15,10 @@ This module is responsible for heavy-lifting with respect to:
 Usually `Version.from_git_configured()` is an entrypoint one
 should be interested in.
 
-> [!CAUTION]
-> Check out guidelines and tutorials for information about CLI/plugin
-> usage and suggested configuration. This section should be of interest
-> to people wanting to use the API directly (e.g. new integrations).
+Important:
+    Check out guidelines and tutorials for information about CLI/plugin
+    usage and suggested configuration. This section should be of interest
+    to people wanting to use the API directly (e.g. new integrations).
 
 """
 
@@ -54,11 +54,14 @@ T = typing.TypeVar("T")
 class Version:
     """Immutable class creating and keeping commit-based semantic versioning.
 
-    > [!TIP]
-    > This class will likely be instantiated by one of creation `classmethod`s.
+    Tip:
+        This class will likely be instantiated by one of creation
+        `classmethod`s, these are ordered by an abstraction level
+        and the higher ups are composed of from the ones below them.
 
-    > [!CAUTION]
-    > This class is immutable, generator methods __will return new instances__.
+    Warning:
+        This class is immutable, generator methods
+        __will return new instances__.
 
     Attributes:
         major:
@@ -91,23 +94,25 @@ class Version:
         unrecognized_message: typing.Literal["ignore", "error"] | None = None,
         repository: str | git.Repo | None = None,
     ) -> Iterator[VersionCommit]:
-        """Yield version and its respective commit.
+        r"""Yield version and its respective commit.
 
-        > [!IMPORTANT]
-        > This `classmethod`'s arguments, if not provided, will be
-        > inferred from `[tool.comver]` section in `pyproject.toml`
-        > (see [loadfig](https://github.com/open-nudge/loadfig)
-        > for more information)
+        Important:
+            This `classmethod`'s arguments, if not provided, will be
+            inferred from `[tool.comver]` section in `pyproject.toml`
+            (see [loadfig](https://github.com/open-nudge/loadfig)
+            for more information)
 
         Example configuration (`pyproject.toml` in your project's git root):
 
         ```toml
         [tool.comver]
-        # All commits will be included EXCEPT the ones with matching messages
+        # All commits will be included EXCEPT the ones with matching scopes
+        # e.g. ("feat: add versioning [no version]")
+        # Note: These are raw strings
         message_excludes = [
-            "*[no version]*",
-            "*[skip version]*",
-            "*[version skip]*",
+            ".*\[no version\].*",
+            ".*\[skip version\].*",
+            ".*\[version skip\].*",
         ]
         # Only changes to the src/* folder count or `pyproject.toml`
         # For version calculations
@@ -122,10 +127,38 @@ class Version:
         ]
         ```
 
-        > [!TIP]
-        > You can also configure this function via `.comver.toml`
-        > instead of `pyproject.toml`, in such case
-        > remove the `[tool.comver]` header, rest stays the same.
+        Example usage:
+
+        ```python
+        import comver
+
+        # Every value taken from the configuration (if available)
+        for output in comver.Version.git_configured():
+            print(output.commit.hexsha, output.version)
+        ```
+
+        Commit messages are used to calculate versions based on the
+        regexes (`major_regexes`, `minor_regexes` and `patch_regexes`).
+
+        Tip:
+            You can also configure this function via `.comver.toml`
+            instead of `pyproject.toml`, in such case
+            remove the `[tool.comver]` header, rest stays the same.
+
+        Warning:
+            `*_exclude` regexes take precedence over `*_include` regexes,
+            the `*_include` regexes are checked first, then the `*_exclude`
+            regexes might disinclude the `*_include` match
+
+        Warning:
+            `author_name`, `author_email` and `path` exclusions
+            __will exclude them from output__ (unlike message based
+            filtering). If the commit does not match it will not be yielded.
+
+        Warning:
+            Message based filtering will not change the version
+            (the same will be returned),
+            __but the Version-Commit pair will be returned__.
 
         Args:
             message_includes:
@@ -199,7 +232,7 @@ class Version:
             patch_regexes=patch_regexes or config["patch_regexes"],
             unrecognized_message=unrecognized_message
             or config["unrecognized_message"],
-            repository=repository or config["repository"],
+            repository=repository,
         )
 
     @classmethod
@@ -221,11 +254,31 @@ class Version:
     ) -> Iterator[VersionCommit]:
         """Yield version and its respective commit.
 
-        Commit messages are used to calculate the next version based on the
-        regexes as defined in the `Version` constructor.
+        Commit messages are used to calculate versions based on the
+        regexes (`major_regexes`, `minor_regexes` and `patch_regexes`).
 
-        Note:
-            Same matching rules apply as in the `Version` constructor.
+        Example usage:
+
+        ```python
+        import comver
+
+        # Will not take commits done by anyone with @foo.com email
+        # into the account when creating versions
+        for output in comver.Version.from_git(
+            author_email_excludes=(r".*@foo.com",)
+        ):
+            print(output.commit.hexsha, output.version)
+        ```
+
+        Warning:
+            `author_name`, `author_email` and `path` exclusions
+            __will exclude them from output__ (unlike message based
+            filtering). If the commit does not match it will not be yielded.
+
+        Warning:
+            Message based filtering will not change the version
+            (the same will be returned),
+            __but the Version-Commit pair will be returned__.
 
         Warning:
             `*_exclude` regexes take precedence over `*_include` regexes,
@@ -328,11 +381,18 @@ class Version:
         patch_regexes: OptionalStringsOrPatterns = None,
         unrecognized_message: typing.Literal["ignore", "error"] | None = None,
     ) -> Iterator[Version]:
-        """Create versions from an iterable of messages.
+        """Yield versions from an iterable of messages.
 
-        > [!CAUTION]
-        > This class is immutable, generator methods
-        > __will return new instances__.
+        Warning:
+            Every message will be returned, even if it is excluded
+            (e.g. by `message_excludes` patterns). In such case
+            the version __will not change__ (the same, previous one,
+            is returned).
+
+        Warning:
+            `*_exclude` regexes take precedence over `*_include` regexes,
+            the `*_include` regexes are checked first, then the `*_exclude`
+            regexes might disinclude the `*_include` match
 
         Args:
             messages:
@@ -391,10 +451,11 @@ class Version:
     ) -> Version:
         """Bump the version based on a message.
 
-        > [!CAUTION]
-        > Each message will be returned, even if it should be excluded
-        > (e.g. by `message_excludes` patterns). In such case
-        > the version __will not change__ (previous one is returned).
+        Warning:
+            The message will be returned, even if it should be excluded
+            (e.g. by `message_excludes` patterns). In such case
+            the version __will not change__ (the same, previous one,
+            is returned).
 
         Args:
             message:
@@ -456,6 +517,8 @@ class Version:
     def from_string(cls, version: str) -> Version:
         """Create a new version from a string.
 
+        Version should be provided in `MAJOR.MINOR.PATCH` format.
+
         Args:
             version:
                 The version as a string.
@@ -488,7 +551,7 @@ class Version:
         """Bump the major version.
 
         Returns:
-            Version with major bumped and rest zeroed out.
+            Version with major bumped and the rest zeroed out.
 
         """
         return type(self)(1 + self.major, 0, 0)
@@ -497,7 +560,7 @@ class Version:
         """Bump the minor version.
 
         Returns:
-            Version with minor bumped and patched zeroed out.
+            Version with minor bumped and the patch zeroed out.
 
         """
         return type(self)(self.major, 1 + self.minor, 0)
@@ -531,14 +594,15 @@ class Version:
     def __eq__(self, other: object) -> bool:  # pyright: ignore [reportImplicitOverride]
         """Check if two versions are equal.
 
-        > [!IMPORTANT]
-        > Versions are equal when their `major`, `minor` and `patch`
-        > are equal.
+        Important:
+            Versions are equal when their `major`, `minor`
+            and `patch` are equal.
 
         Args:
             other:
                 Object to compare against. Should be
-                an instance of `Version` or string.
+                an instance of `Version` or string
+                (e.g. `"2.3.7"`)
 
         Raises:
             NotImplementedError:
@@ -560,15 +624,16 @@ class Version:
     def __lt__(self, other: object) -> bool:
         """Check if this version is smaller than `other`.
 
-        > [!IMPORTANT]
-        > Version is smaller if its major is smaller
-        > or fix is smaller (and major equal) or patch is smaller
-        > (and major and fix equal)
+        Important:
+            Version is smaller if its `major` is smaller
+            or `fix` is smaller (and `major` equal) or `patch` is smaller
+            (and `major` and `fix` equal)
 
         Args:
             other:
                 Object to compare against. Should be
-                an instance of `Version` or string.
+                an instance of `Version` or string
+                (e.g. `"2.3.7"`).
 
         Raises:
             NotImplementedError:
@@ -682,8 +747,8 @@ def _maybe_match(
 ) -> bool:
     """Optionally match variable against includes and excludes.
 
-    > [!IMPORTANT]
-    > `None` is considered as matching.
+    Important:
+        `None` is considered as matching.
 
     Args:
         variable:

@@ -5,9 +5,9 @@
 
 """Type definitions of `comver`.
 
-> [!IMPORTANT]
-> This module is a simplification for `typing` of complex types
-> and should be used __eventually__ by third party plugin developers.
+Important:
+    This module is a simplification for `typing` of complex types
+    and should be used __eventually__ by third party plugin developers.
 
 """
 
