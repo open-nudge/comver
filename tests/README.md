@@ -5,10 +5,6 @@ SPDX-FileContributor: szymonmaszke <github@maszke.co>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Tests of comver
-
-- `test_smoke.py` - generic
-    [smoke tests](https://grafana.com/blog/2024/01/30/smoke-testing/)
-    to check if the package is importable
+# Tests of commition
 
 <!-- Describe your testing here -->
