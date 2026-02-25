@@ -128,8 +128,8 @@ def _verify(args: argparse.Namespace) -> bool:
             print(  # noqa: T201
                 f"Specified version: `{args.version}` has sha: `{sha}`, while expected sha is: `{args.sha}`",
                 file=sys.stderr,
-            ) # pragma: no cover
-            return True # pragma: no cover
+            )  # pragma: no cover
+            return True  # pragma: no cover
 
         if args.sha == sha:
             print(  # noqa: T201
