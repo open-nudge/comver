@@ -88,6 +88,9 @@ urls.Repository = "https://github.com/open-nudge/comver"
 [project.scripts]
 comver = "comver._cli:main"
 
+[project.entry-points.hatch]
+comver = "comver.plugin"
+
 [dependency-groups]
 dev-tests = [
   # Fuzz/property testing for Python
