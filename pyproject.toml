@@ -427,6 +427,7 @@ ignore_undeclared = [
   "pytest",
   "hypothesis",
   "comver",
+  "git",
 ]
 
 ignore_unused = [
@@ -489,6 +490,7 @@ ignore_unused = [
   "reuse",
   "ruff",
   "spdx-tools",
+  "GitPython",
 ]
 
 [tool.interrogate]
