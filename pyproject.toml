@@ -61,6 +61,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
+  "Framework :: Hatch",
 ]
 dynamic = [ "version" ]
 
