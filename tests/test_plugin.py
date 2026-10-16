@@ -176,15 +176,14 @@ def test_plugin(  # noqa: PLR0913
         repository=repository,
     )
 
-    if author_name_excludes or author_email_excludes or message_excludes:
+    # Every commit changes the same file, hence path_excludes excludes them all
+    if (
+        author_name_excludes
+        or author_email_excludes
+        or message_excludes
+        or path_excludes
+    ):
         assert comver_version == "0.0.0"
-    # In case of path_excludes, we will get either 0.1.0, 1.0.0 or 0.0.1
-    elif path_excludes:
-        assert comver_version in (
-            comver.Version(0, 1, 0),
-            comver.Version(1, 0, 0),
-            comver.Version(0, 0, 1),
-        )
     else:
         assert comver_version == test_version
 
