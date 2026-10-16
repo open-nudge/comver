@@ -95,6 +95,45 @@ def test_version_from_messages(
         assert comver.Version.from_string(str(test_version)) == version
 
 
+def _example(
+    versions: tuple[str, ...],
+    path_includes: tuple[str, ...] | None = None,
+    path_excludes: tuple[str, ...] | None = None,
+    commits: tuple[tuple[str, ...], ...] | None = None,
+) -> tuple[
+    tuple[tuple[str, ...], ...],
+    tuple[str, ...] | None,
+    tuple[str, ...] | None,
+    tuple[str, ...],
+]:
+    """Pair commits with versions expected at each of them.
+
+    Args:
+        versions:
+            Version expected at each commit (in order of `commits`).
+        path_includes:
+            Path regexes against which the commit is included.
+        path_excludes:
+            Path regexes against which the commit is excluded.
+        commits:
+            Commits to create (message followed by the paths it changes).
+            Default: Source and docs changes with an empty commit between.
+
+    Returns:
+        Arguments of `test_version_from_git_paths`.
+
+    """
+    if commits is None:
+        commits = (
+            ("fix: add source", "src/main.py"),
+            ("feat: add docs", "docs/my notes.md"),
+            ("chore: empty",),
+            ("feat!: break source", "src/main.py"),
+            ("fix: update docs", "docs/my notes.md"),
+        )
+    return commits, path_includes, path_excludes, versions
+
+
 @pytest.mark.parametrize(
     ("commits", "path_includes", "path_excludes", "versions"),
     (
@@ -243,41 +282,3 @@ def test_incorrect_comparison(
         assert other == comver.Version.from_string(
             "0.31.27",
         )
-
-def _example(
-    versions: tuple[str, ...],
-    path_includes: tuple[str, ...] | None = None,
-    path_excludes: tuple[str, ...] | None = None,
-    commits: tuple[tuple[str, ...], ...] | None = None,
-) -> tuple[
-    tuple[tuple[str, ...], ...],
-    tuple[str, ...] | None,
-    tuple[str, ...] | None,
-    tuple[str, ...],
-]:
-    """Pair commits with versions expected at each of them.
-
-    Args:
-        versions:
-            Version expected at each commit (in order of `commits`).
-        path_includes:
-            Path regexes against which the commit is included.
-        path_excludes:
-            Path regexes against which the commit is excluded.
-        commits:
-            Commits to create (message followed by the paths it changes).
-            Default: Source and docs changes with an empty commit between.
-
-    Returns:
-        Arguments of `test_version_from_git_paths`.
-
-    """
-    if commits is None:
-        commits = (
-            ("fix: add source", "src/main.py"),
-            ("feat: add docs", "docs/my notes.md"),
-            ("chore: empty",),
-            ("feat!: break source", "src/main.py"),
-            ("fix: update docs", "docs/my notes.md"),
-        )
-    return commits, path_includes, path_excludes, versions
