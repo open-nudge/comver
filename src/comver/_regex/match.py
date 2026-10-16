@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import typing
 
+import git
+
 if typing.TYPE_CHECKING:
     import re
-
-    import git
 
 
 def item(
@@ -60,6 +60,9 @@ def path(
     Note:
         Empty `exclude` are treated as include-everything.
 
+    Note:
+        Commits which did not change any path are always included.
+
     Warning:
         Exclude regexes take precedence over include regexes.
 
@@ -77,7 +80,12 @@ def path(
     if include is None and exclude is None:
         return True
 
-    return not commit.diff() or any(
-        item(diff.a_path, include, exclude) if diff.a_path else True
-        for diff in commit.diff()
+    # Compare against the first parent (root commits against an empty tree),
+    # not against the working tree (default of `commit.diff()`)
+    diffs = commit.diff(commit.parents[0] if commit.parents else git.NULL_TREE)
+    return not diffs or any(
+        item(p, include, exclude)
+        for diff in diffs
+        for p in {diff.a_path, diff.b_path}
+        if p is not None
     )
