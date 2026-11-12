@@ -19,7 +19,8 @@ jobs:
       contents: "read"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_run-check.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_run-check.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       check: "legal"

@@ -40,7 +40,8 @@ jobs:
       pull-requests: "read" # Needed to read PR metadata during changelog gen
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
 
   release-draft:
@@ -74,7 +75,8 @@ jobs:
       - name: "Verify release draft"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           directory: "${{ runner.temp }}/draft"
@@ -154,7 +156,8 @@ jobs:
       - name: "Get distributions"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ needs.release.outputs.digests }}"
@@ -231,7 +234,8 @@ jobs:
         # so we compare the digests here
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           directory: "${{ runner.temp }}/docs"
@@ -240,7 +244,8 @@ jobs:
       - name: "Update documentation"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/pages-update@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/pages-update@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           archive: "${{ runner.temp }}/docs/site-${{ github.sha }}.tar"
@@ -248,7 +253,8 @@ jobs:
       - name: "Setup git"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
       - name: "Commit documentation"
         # enq: shell indentation is more readable

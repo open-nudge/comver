@@ -23,6 +23,10 @@
 
 # enq: the only way to set an empty list in YAML
 vulnerabilities: [] # yamllint disable-line rule:brackets
-# enq: the only way to set an empty list in YAML
-licenses: [] # yamllint disable-line rule:brackets
+licenses:
+  # hatchling dependency (hatchling extra, comver.plugin)
+  - id: "MPL-2.0"
+    paths:
+      - "**/pathspec-*.dist-info/METADATA"
+    statement: "Unmodified, distributed as a separate package"
 ...

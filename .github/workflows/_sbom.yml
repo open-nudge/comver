@@ -152,14 +152,16 @@ jobs:
       - name: "Setup reproducibility"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/reproducibility-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/reproducibility-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           path: "source"
       - name: "Setup template release tools"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/setup-release@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/setup-release@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           python-version: "${{ inputs.python-version }}"
@@ -171,7 +173,8 @@ jobs:
           env.INSTALL_PROJECT == 'true'
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ inputs.digests }}"
@@ -179,7 +182,8 @@ jobs:
       - name: "Setup git identity"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
       - name: "Create directory for SBOM"
         run: >
@@ -262,7 +266,8 @@ jobs:
           env.SCAN == 'true'
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           file: "${{ env.ARTIFACT }}/trivy-vuln-${{ env.ARTIFACT }}.sarif"
@@ -271,7 +276,8 @@ jobs:
           inputs.licenses
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           file: "${{ env.ARTIFACT }}/trivy-licenses-${{ env.ARTIFACT }}.sarif"
@@ -279,7 +285,8 @@ jobs:
         id: "digests"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/digests@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/digests@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           paths: "${{ env.ARTIFACT }}/*"
@@ -349,7 +356,8 @@ jobs:
       - name: "Verify SBOM and scan"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ needs.sbom-create.outputs.digests }}"
@@ -367,7 +375,8 @@ jobs:
       - name: "Upload Trivy vulnerabilities SARIF"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           file: "${{ env.ARTIFACT }}/trivy-vuln-${{ env.ARTIFACT }}.sarif"
@@ -381,7 +390,8 @@ jobs:
           inputs.licenses
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           file: "${{ env.ARTIFACT }}/trivy-licenses-${{ env.ARTIFACT }}.sarif"
@@ -427,7 +437,8 @@ jobs:
       - name: "Get verified distributions"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ inputs.digests }}"
@@ -436,7 +447,8 @@ jobs:
       - name: "Verify distributions provenance"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/attestation-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/attestation-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           directory: "dist"
@@ -453,7 +465,8 @@ jobs:
         id: "digests"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ needs.sbom-create.outputs.digests }}"

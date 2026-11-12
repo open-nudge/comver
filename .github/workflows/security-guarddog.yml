@@ -40,7 +40,8 @@ jobs:
     name: "Security GuardDog Core"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       target: "python"
@@ -53,7 +54,8 @@ jobs:
     name: "Security GuardDog Python"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       target: "python"
@@ -66,7 +68,8 @@ jobs:
     name: "Security GuardDog Actions"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-guarddog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       target: "actions"
@@ -99,7 +102,8 @@ jobs:
       security-events: "write" # Needed to upload SARIF file to tab
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_security-upload.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-upload.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       name: "${{ matrix.scan.name }}"

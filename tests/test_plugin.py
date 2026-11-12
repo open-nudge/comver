@@ -51,7 +51,7 @@ def repository(draw: st.DrawFn, *, n_commits: int = 10) -> tuple[str, CommitType
     Returns:
         Path to the repository and types of its consecutive commits.
     """
-    directory = pathlib.Path(tempfile.mkdtemp())
+    directory = pathlib.Path(tempfile.mkdtemp()).resolve()
     repo = git.Repo.init(directory)
     file = directory / "file.txt"
 

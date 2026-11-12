@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import sys
 import typing
 
 import pytest
@@ -15,6 +16,30 @@ import comver
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config: pytest.Config) -> None:
+    """Allow localhost sockets on Windows, where asyncio needs them.
+
+    asyncio event loops (e.g. `pytest-asyncio` runners) create a socket pair,
+    which Windows emulates with localhost TCP sockets instead of Unix ones,
+    hence `--allow-unix-socket` does not cover it and `--disable-socket`
+    leaves a half-initialized event loop (an unraisable `ResourceWarning`).
+
+    `pytest-socket` skips `--disable-socket` when `--allow-hosts` is given,
+    connections to other hosts remain blocked.
+
+    > Runs before `pytest-socket` reads its options.
+
+    Args:
+        config:
+            pytest configuration.
+
+    """
+    # enq: platform-specific escape hatch
+    if sys.platform == "win32" and config.option.allow_hosts is None:  # pragma: no cover
+        config.option.allow_hosts = "127.0.0.1"
 
 
 @pytest.fixture(scope="session", autouse=True)

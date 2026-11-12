@@ -54,7 +54,8 @@ jobs:
         id: "version"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
-        uses: "open-nudge/opentemplate/.github/actions/release-version@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/release-version@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
 
   sboms:
@@ -70,7 +71,8 @@ jobs:
       contents: "read"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-sboms.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-sboms.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       upload-sarif: "${{ inputs.upload-sarif }}"
@@ -87,7 +89,8 @@ jobs:
       artifact-metadata: "write" # Needed to create artifact metadata
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-sarifs.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-sarifs.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       upload-sarif: "${{ inputs.upload-sarif }}"
@@ -98,7 +101,8 @@ jobs:
       contents: "read"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_tests.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_tests.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
 
   docs:
@@ -109,7 +113,8 @@ jobs:
       contents: "read"
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-docs.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-docs.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       version: "${{ needs.version.outputs.version }}"
@@ -124,7 +129,8 @@ jobs:
       artifact-metadata: "write" # Needed to create artifact metadata
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-build.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-build.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
 
   changelog:
@@ -140,7 +146,8 @@ jobs:
       pull-requests: "read" # Needed to read PR metadata during changelog gen
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-changelog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-changelog.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       package-name: "${{ needs.package-create.outputs.package-name }}"
@@ -157,7 +164,8 @@ jobs:
       artifact-metadata: "write" # Needed to create artifact metadata
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-vsa.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-vsa.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       digests: "${{ needs.package-create.outputs.digests }}"
@@ -177,7 +185,8 @@ jobs:
       attestations: "read" # Needed to verify release assets
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/_release-upload.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_release-upload.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       digests: "${{ needs.package-create.outputs.digests }}"

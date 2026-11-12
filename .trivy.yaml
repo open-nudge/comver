@@ -44,4 +44,43 @@ allow-dependencies-licenses:
   - "pkg:pypi/wcwidth"
   # MPL-2.0 (with MIT and BSD-3-Clause), dev-pyproject group (not distributed)
   - "pkg:pypi/validate-pyproject"
+  # MPL-2.0, hatchling extra (unmodified, distributed as a separate package,
+  # see .trivyignore.yaml), also dev-yaml group (yamllint)
+  - "pkg:pypi/pathspec"
+  # LGPL-3.0-or-later, dev-docs group (not distributed)
+  - "pkg:pypi/cairosvg"
+  # MIT-CMU, dev-docs group (not distributed)
+  - "pkg:pypi/pillow"
+  # GPL-2.0, dev-text group (not distributed)
+  - "pkg:pypi/codespell"
+  # MPL-2.0, dev-github and dev-citation groups via jsonschema (not distributed)
+  - "pkg:pypi/fqdn"
+  # MIT AND MPL-2.0, dev-github and dev-citation groups via jsonschema
+  # (not distributed)
+  - "pkg:pypi/lark"
+  # Apache-2.0 AND GPL-1.0-or-later AND MIT, dev-github and dev-citation
+  # groups via jsonschema (not distributed)
+  - "pkg:pypi/rfc3987-syntax"
+  # GPL-2.0-only (with linking exception), dev-security group via guarddog
+  # (not distributed)
+  - "pkg:pypi/pygit2"
+  # PSF-2.0 (misreported by the dependency graph), dev-security group
+  # via guarddog (not distributed)
+  - "pkg:pypi/typing-extensions"
+  # GPL-3.0-only, dev-ini group (not distributed)
+  - "pkg:pypi/pyinilint"
+  # MPL-2.0, dev-tests group (not distributed)
+  - "pkg:pypi/pytest-html"
+  # MPL-2.0, dev-tests group via pytest-html (not distributed)
+  - "pkg:pypi/pytest-metadata"
+  # GPL-3.0-or-later (with Apache-2.0, CC-BY-SA-4.0 and CC0-1.0), dev-legal
+  # and dev-release groups (not distributed)
+  - "pkg:pypi/reuse"
+  # GPL-2.0-or-later, dev-legal and dev-release groups via reuse
+  # (not distributed)
+  - "pkg:pypi/python-debian"
+  # Apache-2.0 AND GPL-2.0-only, dev-release group (not distributed)
+  - "pkg:pypi/spdx-tools"
+  # GPL-3.0-or-later, dev-yaml group (not distributed)
+  - "pkg:pypi/yamllint"
 ...
