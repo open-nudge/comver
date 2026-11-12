@@ -1,0 +1,25 @@
+{
+  "name": "tags-all",
+  "target": "tag",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~ALL"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "update"
+    }
+  ],
+  "bypass_actors": []
+}

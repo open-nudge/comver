@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -11,13 +11,16 @@ on:
     branches:
       - "main"
     paths:
-      - ".github/workflows/*"
-      - ".github/actions/*"
+      - ".github/workflows/*.yml"
+      - ".github/actions/*/action.yml"
   merge_group:
     types:
       - "checks_requested"
 
+# enq: the only way to set permissions to none in GH Actions
 permissions: {} # yamllint disable-line rule:braces
+
+cache-mode: "read"
 
 concurrency:
   group: >
@@ -32,29 +35,35 @@ jobs:
       contents: "read"
     runs-on: "ubuntu-latest"
     steps:
-      - name: "Harden Runner" # zizmor: ignore[known-vulnerable-actions]
-        # yamllint disable rule:line-length
-        uses: "step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0" # v2.12.0
-        # yamllint enable rule:line-length
+      - name: "Harden Runner"
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
         with:
           # Uses docker container,
           # disable-sudo-and-containers impossible
           disable-sudo: true
           egress-policy: "block"
           allowed-endpoints: |
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            codeload.github.com:443
+            results-receiver.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
             github.com:443
       - name: "Checkout repository"
-        # yamllint disable rule:line-length
-        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
-        # yamllint enable rule:line-length
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
         with:
           sparse-checkout: |
+            .github/actionlint.yaml
             .github/workflows
             .github/actions
+          # All blobs in the retried fetch, not lazily during checkout
+          # https://github.com/actions/checkout/issues/2597
+          filter: "blob:limit=1g"
           persist-credentials: false
       - name: "Check workflow files"
+        # enq: the image reference is digest-pinned.
         # yamllint disable rule:line-length
-        uses: "docker://rhysd/actionlint:1.7.1@sha256:435ecdb63b1169e80ca3e136290072548c07fc4d76a044cf5541021712f8f344" # v1.7.1
+        uses: "docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667" # v1.7.12
         # yamllint enable rule:line-length
         with:
           args: "-color"

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -16,45 +16,139 @@ on:
           - "Free"
           - "Pro/Team"
           - "Enterprise"
-      reviewers:
-        description: "Number of reviewers available to review pull requests"
+      contributors:
+        description: "Number of contributors (including you)"
         type: "choice"
-        default: "0 (single contributor)"
+        default: "1 (solo)"
         options:
-          - "0 (single contributor)"
-          - "1"
-          - "2 (or more)"
+          - "1 (solo)"
+          - "2"
+          - "3 (or more)"
         required: true
+      release-reviewers:
+        description: >-
+          PyPI release approvers: whitespace-separated GitHub usernames (e.g. "alice bob").
+          Together with release-teams: at most 6 entries covering at least
+          2 distinct people (if 2 or more contributors)
+        type: "string"
+        default: ""
+        required: false
+      release-teams:
+        description: >-
+          PyPI release approver teams: whitespace-separated organization team slugs (e.g. "core release").
+          Counts toward the 6-entry limit shared with release-reviewers
+        type: "string"
+        default: ""
+        required: false
 
+# enq: the only way to set permissions to none in GH Actions
 permissions: {} # yamllint disable-line rule:braces
 
+cache-mode: "read"
+
+concurrency:
+  group: >
+    ${{ github.workflow_ref }}
+
 jobs:
-  harden:
-    name: "Harden"
-    # Only for checkout, rest of the operations are done via token
-    # with Administrator and Pages write permissions
+  globalize:
+    name: "Globalize workflows"
+    if: >
+      github.ref == 'refs/heads/main'
+      || github.ref == 'refs/heads/master'
     permissions:
-      # Checkout operation
-      contents: "read"
-      # Closing the issue
-      issues: "write"
-    timeout-minutes: 10
+      contents: "write" # Needed to commit globalized workflow references.
+    timeout-minutes: 30
     runs-on: "ubuntu-latest"
     steps:
       - name: "Harden Runner"
-        # yamllint disable rule:line-length
-        uses: "step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0" # v2.12.0
-        # yamllint enable rule:line-length
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
         with:
           disable-sudo-and-containers: true
           egress-policy: "block"
           allowed-endpoints: >
+            *.actions.githubusercontent.com:443
+            codeload.github.com:443
+            results-receiver.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+            github.com:443
+      - name: "Wait for template setup to finish (guard)"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        # enq: indentation disabled to aid bash script readability
+        # yamllint disable rule:indentation rule:line-length
+        run: |
+          printf "Waiting for branch 'gh-pages' to exist on GitHub...\n"
+
+          while true; do
+            if gh api "repos/${GITHUB_REPOSITORY}/branches/gh-pages" &>/dev/null; then
+              printf "Branch 'gh-pages' exists!\n"
+              break
+            fi
+
+            sleep 1
+          done
+        # yamllint enable rule:indentation rule:line-length
+      - name: "Checkout latest target branch"
+        # enq: Checkout credentials are required by the following globalization push.
+        # zizmor: ignore[artipacked]
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
+        with:
+          # enq: Bootstrap PAT authorizes the commit that globalizes workflow references.
+          token: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+          ref: "${{ github.ref_name }}"
+          persist-credentials: true
+      - name: "Setup git"
+        # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+        # yamllint disable rule:line-length
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        # yamllint enable rule:line-length
+      - name: "Globalize workflows"
+        run: "bash .github/reusability/globalize.sh"
+      - name: "Commit and push changes"
+        # enq: indentation disabled to aid bash script readability
+        # yamllint disable rule:indentation
+        run: |
+          git add --all .github
+          if ! git diff --cached --quiet; then
+            git commit -s -m "Globalize GitHub Actions workflows"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+        # yamllint enable rule:indentation
+  harden:
+    name: "Harden"
+    needs: "globalize"
+    # Run only on main/master branches
+    if: >
+      github.ref == 'refs/heads/main'
+      || github.ref == 'refs/heads/master'
+    permissions:
+      contents: "read"
+      issues: "write" # Needed to close the issue
+    timeout-minutes: 10
+    runs-on: "ubuntu-latest"
+    env:
+      GH_REPO: "${{ github.repository }}"
+    steps:
+      - name: "Harden Runner"
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        with:
+          disable-sudo-and-containers: true
+          egress-policy: "block"
+          allowed-endpoints: >
+            *.actions.githubusercontent.com:443
+            codeload.github.com:443
+            results-receiver.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
             api.github.com:443
             github.com:443
       - name: "Normalize type of account/organization"
         id: "organization"
         env:
           ORGANIZATION: "${{ inputs.organization }}"
+        # enq: indentation disabled to aid bash script readability
         # yamllint disable rule:indentation
         run: |
           case "${ORGANIZATION}" in
@@ -69,77 +163,66 @@ jobs:
               ;;
           esac
         # yamllint enable rule:indentation
-      - name: "Normalize reviewers values"
-        id: "reviewers"
+      - name: "Normalize contributors"
+        id: "contributors"
         env:
-          REVIEWERS: "${{ inputs.reviewers }}"
+          CONTRIBUTORS: "${{ inputs.contributors }}"
+        # Required pull request approvals (author excluded)
+        # enq: indentation disabled to aid bash script readability
         # yamllint disable rule:indentation
         run: |
-          case "${REVIEWERS}" in
-            "0 (single contributor)")
-              echo "count=0" >> "${GITHUB_OUTPUT}"
+          case "${CONTRIBUTORS}" in
+            "1 (solo)")
+              echo "approvals=0" >> "${GITHUB_OUTPUT}"
               ;;
-            "1")
-              echo "count=1" >> "${GITHUB_OUTPUT}"
-              ;;
-            *)
-              echo "count=2" >> "${GITHUB_OUTPUT}"
-              ;;
-          esac
-        # yamllint enable rule:indentation
-      - name: "Calculate settings for the repository"
-        id: "settings"
-        env:
-          REPOSITORY_VISIBILITY: "${{ github.event.repository.visibility }}"
-        # yamllint disable rule:indentation
-        run: |
-          case "${REPOSITORY_VISIBILITY}" in
-            "public" | "internal" )
-              echo "advanced_security=true" >> "${GITHUB_OUTPUT}"
-              echo "secret_scanning=true" >> "${GITHUB_OUTPUT}"
+            "2")
+              echo "approvals=1" >> "${GITHUB_OUTPUT}"
               ;;
             *)
-              echo "visibility=private" >> "${GITHUB_OUTPUT}"
+              echo "approvals=2" >> "${GITHUB_OUTPUT}"
               ;;
           esac
         # yamllint enable rule:indentation
       - name: "Checkout repository"
-        # yamllint disable rule:line-length
-        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
-        # yamllint enable rule:line-length
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
         with:
           sparse-checkout: |
             .github/rulesets
+            .github/tools/harden
+            .github/tools/pypi
           sparse-checkout-cone-mode: false
+          # All blobs in the retried fetch, not lazily during checkout
+          # https://github.com/actions/checkout/issues/2597
+          filter: "blob:limit=1g"
           persist-credentials: false
-      - name: "Wait for template setup to finish (guard)"
-        # yamllint disable rule:indentation rule:line-length
-        run: |
-          printf "Waiting for branch 'gh-pages' to exist on GitHub...\n"
-
-          while true; do
-            # Check if the branch exists on the remote repository
-            if git ls-remote --exit-code --heads origin gh-pages &>/dev/null; then
-              printf "Branch 'gh-pages' exists!\n"
-              break
-            fi
-
-            sleep 1
-          done
-      - name: "Adjust reviewers in rulesets"
+      - name: "Resolve PyPI release approvers"
+        # Check the two-person policy before hardening mutations.
+        # GitHub validates reviewer eligibility and limits when applying the environment.
+        # Two distinct people leave an alternative when self-review is prevented.
+        # Required reviewers in private repositories need Enterprise plan.
+        id: "release-approvers"
         env:
-          REVIEWERS: "${{ steps.reviewers.outputs.count }}"
-          LAST_PUSH_APPROVAL: >-
-            ${{ steps.reviewers.outputs.count != '0' && 'true' || 'false' }}
-        run: >
-          sed -i \
-            -e "s/\"PLACEHOLDER_REVIEWERS\"/${REVIEWERS}/g" \
-            -e "s/\"PLACEHOLDER_LAST_PUSH_APPROVAL\"/${LAST_PUSH_APPROVAL}/g" \
-            .github/rulesets/branch-default-human.json
-      - name: "Check reviewers changed correctly"
-        run: >
-          cat .github/rulesets/branch-default-human.json
-        # yamllint enable rule:indentation rule:line-length
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+          RELEASE_REVIEWERS: "${{ inputs.release-reviewers }}"
+          RELEASE_TEAMS: "${{ inputs.release-teams }}"
+          REQUIRE_REVIEWERS: >-
+            ${{ steps.contributors.outputs.approvals != '0'
+            && (github.event.repository.visibility == 'public'
+            || steps.organization.outputs.type == 'enterprise')
+            && 'true' || 'false' }}
+        # enq: indentation disabled to aid bash script readability
+        # yamllint disable rule:indentation
+        run: |
+          body='{}'
+          if [ "${REQUIRE_REVIEWERS}" = "true" ]; then
+            body=$(./.github/tools/pypi/resolve.sh "${RELEASE_REVIEWERS}" "${RELEASE_TEAMS}")
+          elif [ -n "${RELEASE_REVIEWERS}${RELEASE_TEAMS}" ]; then
+            echo "::warning::release reviewers/teams ignored (solo or plan without environment reviewers)"
+          fi
+          echo "body=${body}" >> "${GITHUB_OUTPUT}"
+        # yamllint enable rule:indentation
       - name: "Apply rulesets (public/enterprise/pro/team only)"
         # Administration write
         # https://docs.github.com/en/rest/repos/rules?apiVersion=2022-11-28#create-a-repository-ruleset
@@ -148,20 +231,11 @@ jobs:
           || steps.organization.outputs.type == 'enterprise'
           || steps.organization.outputs.type == 'pro'
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          RULES_ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/rulesets
-          # yamllint enable rule:line-length
-        # yamllint disable rule:indentation rule:line-length
-        run: >
-          find .github/rulesets -name "*.json" -print0 | parallel -0 -j0 --halt now,fail=1 \
-            "gh api --method POST \
-              -H 'Accept: application/vnd.github+json' \
-              -H 'X-GitHub-Api-Version: 2022-11-28' \
-              '${RULES_ENDPOINT}' \
-              --input {}"
-        # yamllint enable rule:indentation rule:line-length
+          REVIEWERS: "${{ steps.contributors.outputs.approvals }}"
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/rulesets.sh \"${REVIEWERS}\" .github/rulesets"
       - name: "Enable GitHub Pages (public/enterprise only)"
         # Administration AND Pages write
         # https://docs.github.com/en/rest/pages/pages?apiVersion=2022-11-28#create-a-github-pages-site
@@ -169,103 +243,71 @@ jobs:
           github.event.repository.visibility == 'public'
           || steps.organization.outputs.type == 'enterprise'
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          PAGES_ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pages
-          # yamllint enable rule:line-length
-        run: >
-          gh api
-          --method POST
-          -H "Accept: application/vnd.github+json"
-          -H "X-GitHub-Api-Version: 2022-11-28"
-          "${PAGES_ENDPOINT}"
-          -f "source[branch]=gh-pages" -f "source[path]=/"
-          -f "build_type=legacy"
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        # Deployed by actions/deploy-pages (release.yml), gh-pages branch
+        # only stores the versioned (mike) documentation
+        run: "./.github/tools/harden/pages.sh"
+      - name: "Allow GitHub Pages deployments from tags (public/enterprise only)"
+        # Administration write, releases (tags) deploy the documentation,
+        # github-pages environment allows the default branch only otherwise
+        # https://docs.github.com/en/rest/deployments/environments?apiVersion=2022-11-28#create-or-update-an-environment
+        if: >
+          github.event.repository.visibility == 'public'
+          || steps.organization.outputs.type == 'enterprise'
+        env:
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/pages-tags.sh"
       - name: "Apply general settings for the repository"
         # Administration write
         # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#update-a-repository
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          HOMEPAGE: >-
-            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-          # yamllint enable rule:line-length
-        # yamllint disable rule:indentation
-        run: >
-          cat <<EOF | gh api
-          --method PATCH
-          -H "Accept: application/vnd.github+json"
-          -H "X-GitHub-Api-Version: 2022-11-28"
-          "${ENDPOINT}"
-          --input -
-            {
-              "allow_auto_merge": true,
-              "allow_merge_commit": false,
-              "allow_rebase_merge": false,
-              "allow_squash_merge": true,
-              "allow_update_branch": true,
-              "delete_branch_on_merge": true,
-              "use_squash_pr_title_as_default": true,
-              "has_issues": true,
-              "has_projects": true,
-              "has_wiki": false,
-              "homepage": "${HOMEPAGE}",
-              "squash_merge_commit_title": "PR_TITLE",
-              "squash_merge_commit_message": "COMMIT_MESSAGES",
-              "web_commit_signoff_required": true
-            }
-          EOF
-        # yamllint enable rule:indentation
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/settings.sh"
       - name: "Enable security features for the repository (best effort)"
         # Administration write
         # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#update-a-repository
         continue-on-error: true
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          # yamllint enable rule:line-length
-        # yamllint disable rule:indentation
-        run: >
-          cat <<EOF | gh api
-          --method PATCH
-          -H "Accept: application/vnd.github+json"
-          -H "X-GitHub-Api-Version: 2022-11-28"
-          "${ENDPOINT}"
-          --input -
-            {
-              "security_and_analysis": {
-                "advanced_security": {
-                  "status": "enabled"
-                },
-                "secret_scanning": {
-                  "status": "enabled"
-                },
-                "secret_scanning_ai_detection": {
-                  "status": "enabled"
-                },
-                "secret_scanning_push_protection": {
-                  "status": "enabled"
-                },
-                "secret_scanning_non_provider_patterns": {
-                  "status": "enabled"
-                }
-              }
-            }
-          EOF
-        # yamllint enable rule:indentation
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/security.sh"
+        # Default CodeQL conflicts with opentemplate setup
+      - name: "Disable CodeQL default setup (best effort)"
+        # Default setup rejects SARIFs of _security-codeql.yml
+        # (may be enforced by organization security configuration)
+        # Administration write
+        # https://docs.github.com/en/rest/code-scanning/code-scanning?apiVersion=2022-11-28#update-a-code-scanning-default-setup-configuration
+        continue-on-error: true
+        env:
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/codeql.sh"
       - name: "Enable discussions"
         # Discussions cannot be managed via API currently
         # See here: https://github.com/orgs/community/discussions/46930
         # Administration write
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-        run: >
-          gh repo edit --enable-discussions=true
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/discussions.sh"
+      - name: "Enable immutable releases"
+        # Administration write
+        # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#enable-immutable-releases
+        # More info:
+        # https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases
+        env:
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/immutable-releases.sh"
       - name: "Enable private vulnerability reporting (public only)"
         # Administration write
         # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#enable-private-vulnerability-reporting-for-a-repository
@@ -274,42 +316,39 @@ jobs:
         if: >
           github.event.repository.visibility == 'public'
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          PRIVATE_VULNERABILITY_REPORTING_ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/private-vulnerability-reporting
-          # yamllint enable rule:line-length
-        run: >
-          gh api
-          --method PUT
-          -H "Accept: application/vnd.github+json"
-          -H "X-GitHub-Api-Version: 2022-11-28"
-          "${PRIVATE_VULNERABILITY_REPORTING_ENDPOINT}"
-      - name: "Enable vulnerability alerts (public only)"
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/private-vulnerability-reporting.sh"
+      - name: "Enable vulnerability alerts and security updates (public only)"
         # Administration write
         # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#enable-vulnerability-alerts
+        # https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#enable-dependabot-security-updates
         # More info:
         # https://docs.github.com/en/code-security/dependabot/dependabot-alerts/about-dependabot-alerts
+        # https://docs.github.com/en/code-security/dependabot/dependabot-security-updates/about-dependabot-security-updates
         if: >
           github.event.repository.visibility == 'public'
         env:
-          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}"
-          # yamllint disable rule:line-length
-          VULNERABILITY_ALERTS_ENDPOINT: >-
-            /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/vulnerability-alerts
-          # yamllint enable rule:line-length
-        # yamllint disable rule:indentation
-        run: >
-          gh api
-          --method PUT
-          -H "Accept: application/vnd.github+json"
-          -H "X-GitHub-Api-Version: 2022-11-28"
-          "${VULNERABILITY_ALERTS_ENDPOINT}"
-        # yamllint enable rule:indentation
+          # enq: One-time short-lived token (1 day).
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+        run: "./.github/tools/harden/vulnerability-alerts.sh"
+      - name: "Create PyPI release environment (public/enterprise/pro/team only)"
+        # Administration write
+        # https://docs.github.com/en/rest/deployments/environments?apiVersion=2022-11-28#create-or-update-an-environment
+        if: >
+          github.event.repository.visibility == 'public'
+          || steps.organization.outputs.type == 'enterprise'
+          || steps.organization.outputs.type == 'pro'
+        env:
+          # enq: This workflow is deleted after setup, so it is not a security threat.
+          GH_TOKEN: "${{ secrets.TEMPLATE_GITHUB_TOKEN }}" # zizmor: ignore[secrets-outside-env]
+          BODY: "${{ steps.release-approvers.outputs.body }}"
+        run: "./.github/tools/harden/pypi.sh"
       - name: "Close the issue"
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          REPOSITORY: "${{ github.event.repository.name }}"
         run: >
           gh issue close 1 --reason "completed"
 
@@ -319,16 +358,14 @@ jobs:
     name: "Hardened Scorecard"
     permissions:
       # Required to upload SARIF file to CodeQL.
-      # See: https://github.com/github/codeql-action/issues/2117
-      actions: "read"
-      # Writing security events to upload SARIF file to security tab
-      security-events: "write"
-      # Only need to read contents
+      actions: "read" # https://github.com/github/codeql-action/issues/2117
+      security-events: "write" # Writing security events to upload SARIF file
       contents: "read"
-      # Needed for GitHub OIDC token if publish_results is true
-      id-token: "write"
+      id-token: "write" # Needed for GitHub OIDC token if publish_results
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/security-scorecard-reusable.yml@main" # zizmor: ignore[unpinned-uses]
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-scorecard.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
     with:
       sarif: true

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -12,7 +12,22 @@ This document outlines the testing process of `opentemplate`-based projects.
 ## Features
 
 - Uses [`pytest`](https://github.com/pytest-dev/pytest) for testing.
-- Measures test coverage with [`pytest-cov`](https://github.com/pytest-dev/pytest-cov)
+- Collects doctests from source modules.
+- Runs `python` code blocks from markdown files in `docs`
+    and from docstrings via
+    [`pytest-markdown-docs`](https://github.com/modal-labs/pytest-markdown-docs)
+    (use `python notest` to skip a block).
+- __Network is disabled__ in tests via
+    [`pytest-socket`](https://github.com/miketheman/pytest-socket);
+    mark tests with `@pytest.mark.enable_socket` to allow it.
+- Fails tests running longer than `300` seconds via
+    [`pytest-timeout`](https://github.com/pytest-dev/pytest-timeout).
+- Provides the `mocker` fixture via
+    [`pytest-mock`](https://github.com/pytest-dev/pytest-mock).
+- Annotates failures inline in GitHub pull requests via
+    [`pytest-github-actions-annotate-failures`](https://github.com/pytest-dev/pytest-github-actions-annotate-failures).
+- Reports the `10` slowest tests and a summary of all non-passed outcomes.
+- Measures test coverage with [`coverage`](https://github.com/nedbat/coveragepy)
     (default threshold: `100%`).
 - __Local testing:__ Runs on the latest three Python versions,
     following [SPEC 0](https://scientific-python.org/specs/spec-0000/).
@@ -52,12 +67,17 @@ regular source code.
 > All changes apply to the CI as well.
 
 - To change coverage requirements, update the `fail_under`
-    flag in `[tool.coverage.reports]` section in `pyproject.toml`
-- To change the test runner, update the `tests` script in
+    flag in `[tool.coverage.report]` section in `pyproject.toml`
+- To change mutation testing, update the `[tool.mutmut]` section
+    in `pyproject.toml`.
+- To change default `pytest` options (network, markdown tests, timeout
+    via `timeout` key), update the `[tool.pytest.ini_options]` section
+    in `pyproject.toml`.
+- To change the test runner, update the `tests-coverage` script in
     the `pyproject.toml` file.
 
 ## Code sources
 
 - `pyproject.toml`
-- `.github/workflows/tests*.yml`
-- `.github/workflows/typing*.yml`
+- `.github/workflows/*tests*.yml`
+- `.github/workflows/*typing*.yml`

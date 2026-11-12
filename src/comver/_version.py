@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -27,26 +27,29 @@ from __future__ import annotations
 import collections
 import dataclasses
 import functools
+import os
 import typing
+
+from importlib import metadata
 
 import git
 import loadfig
 
-from comver import _regex, error
+from comver import _regex, _repository, error
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     from comver.type_definitions import OptionalStringsOrPatterns
 
-from importlib.metadata import version
+# enq: arguments of the public classmethods are documented one by one
+# noqa-file: PYNUDGER32
 
-_version = version("comver")
+# enq: private module name (_version) groups version related objects already
+# noqa-file: PYNUDGER43
+
+_version = metadata.version("comver")
 """Current comver version."""
-
-del version
-
-T = typing.TypeVar("T")
 
 
 @functools.total_ordering
@@ -76,10 +79,11 @@ class Version:
     minor: int = 0
     patch: int = 0
 
-    # Add commit message includes and commit message excludes
     @classmethod
+    # enq: filters are separate, optional and keyword-only options
     def from_git_configured(  # noqa: PLR0913
         cls,
+        *,
         message_includes: OptionalStringsOrPatterns = None,
         message_excludes: OptionalStringsOrPatterns = None,
         path_includes: OptionalStringsOrPatterns = None,
@@ -99,7 +103,7 @@ class Version:
         Important:
             This `classmethod`'s arguments, if not provided, will be
             inferred from `[tool.comver]` section in `pyproject.toml`
-            (see [loadfig](https://github.com/open-nudge/loadfig)
+            of the `repository` (see [loadfig](https://github.com/open-nudge/loadfig)
             for more information)
 
         Example configuration (`pyproject.toml` in your project's git root):
@@ -108,11 +112,11 @@ class Version:
         [tool.comver]
         # All commits will be included EXCEPT the ones with matching scopes
         # e.g. ("feat: add versioning [no version]")
-        # Note: These are raw strings
+        # Note: These are TOML literal strings (no escaping needed)
         message_excludes = [
-            ".*\[no version\].*",
-            ".*\[skip version\].*",
-            ".*\[version skip\].*",
+            '.*\[no version\].*',
+            '.*\[skip version\].*',
+            '.*\[version skip\].*',
         ]
         # Only changes to the src/* folder count or `pyproject.toml`
         # For version calculations
@@ -121,9 +125,9 @@ class Version:
             "pyproject.toml",
         ]
 
-        # Commits done by GitHub bot are excluded from versioning
+        # Commits done by bots (e.g. GitHub Actions) are excluded
         author_name_excludes = [
-            "github-actions[bot]",
+            '.*\[bot\].*',
         ]
         ```
 
@@ -133,7 +137,7 @@ class Version:
         import comver
 
         # Every value taken from the configuration (if available)
-        for output in comver.Version.git_configured():
+        for output in comver.Version.from_git_configured():
             print(output.commit.hexsha, output.version)
         ```
 
@@ -201,43 +205,41 @@ class Version:
                 Default: From config OR matches messages starting with `fix:`.
             unrecognized_message:
                 The behavior for unrecognized messages. It can be
-                either "exclude" or "error".
+                either "ignore" or "error".
                 Default: From config OR "ignore"
             repository:
-                The `git` repository.
-                Default: From config OR will be searched
-                in the parent directories.
+                The `git` repository (its configuration is used).
+                Default: Searched in the parent directories
+                of the current working directory.
 
         Yields:
             Version and its respective commit
 
         """
-        config = collections.defaultdict(lambda: None, loadfig.config("comver"))
+        directory = os.fspath(repository.working_dir) if isinstance(repository, git.Repo) else repository
+        config = collections.defaultdict(lambda: None, loadfig.config("comver", directory=directory))
 
         yield from cls.from_git(
             message_includes=message_includes or config["message_includes"],
             message_excludes=message_excludes or config["message_excludes"],
             path_includes=path_includes or config["path_includes"],
             path_excludes=path_excludes or config["path_excludes"],
-            author_name_includes=author_name_includes
-            or config["author_name_includes"],
-            author_name_excludes=author_name_excludes
-            or config["author_name_excludes"],
-            author_email_includes=author_email_includes
-            or config["author_email_includes"],
-            author_email_excludes=author_email_excludes
-            or config["author_email_excludes"],
+            author_name_includes=author_name_includes or config["author_name_includes"],
+            author_name_excludes=author_name_excludes or config["author_name_excludes"],
+            author_email_includes=author_email_includes or config["author_email_includes"],
+            author_email_excludes=author_email_excludes or config["author_email_excludes"],
             major_regexes=major_regexes or config["major_regexes"],
             minor_regexes=minor_regexes or config["minor_regexes"],
             patch_regexes=patch_regexes or config["patch_regexes"],
-            unrecognized_message=unrecognized_message
-            or config["unrecognized_message"],
+            unrecognized_message=unrecognized_message or config["unrecognized_message"],
             repository=repository,
         )
 
     @classmethod
+    # enq: filters are separate, optional and keyword-only options
     def from_git(  # noqa: PLR0913
         cls,
+        *,
         message_includes: OptionalStringsOrPatterns = None,
         message_excludes: OptionalStringsOrPatterns = None,
         path_includes: OptionalStringsOrPatterns = None,
@@ -252,7 +254,7 @@ class Version:
         unrecognized_message: typing.Literal["ignore", "error"] | None = None,
         repository: str | git.Repo | None = None,
     ) -> Iterator[VersionCommit]:
-        """Yield version and its respective commit.
+        r"""Yield version and its respective commit.
 
         Commit messages are used to calculate versions based on the
         regexes (`major_regexes`, `minor_regexes` and `patch_regexes`).
@@ -264,9 +266,8 @@ class Version:
 
         # Will not take commits done by anyone with @foo.com email
         # into the account when creating versions
-        for output in comver.Version.from_git(
-            author_email_excludes=(r".*@foo.com",)
-        ):
+        excludes = (r".*@foo\.com",)
+        for output in comver.Version.from_git(author_email_excludes=excludes):
             print(output.commit.hexsha, output.version)
         ```
 
@@ -326,54 +327,55 @@ class Version:
                 Default: Matches messages starting with `fix:`.
             unrecognized_message:
                 The behavior for unrecognized messages. It can be
-                either "exclude" or "error".
+                either "ignore" or "error".
                 Default: "ignore"
             repository:
                 The `git` repository.
                 Default: Searched in the parent directories.
+                Repository opened here is closed once all versions
+                are yielded, passed `git.Repo` is left open.
 
         Yields:
             Version and its respective commit
 
         """
-        if isinstance(repository, str):
-            repository = git.Repo(repository)
-        if repository is None:
-            repository = git.Repo(search_parent_directories=True)
+        with _repository.repository(repository) as repo:
+            commits = [
+                commit
+                for commit in repo.iter_commits(reverse=True)
+                if _regex.match.commit(
+                    commit,
+                    path_includes=path_includes,
+                    path_excludes=path_excludes,
+                    author_name_includes=author_name_includes,
+                    author_name_excludes=author_name_excludes,
+                    author_email_includes=author_email_includes,
+                    author_email_excludes=author_email_excludes,
+                )
+            ]
 
-        commits = [
-            commit
-            for commit in repository.iter_commits(reverse=True)
-            if _include_commit(
-                commit,
-                path_includes,
-                path_excludes,
-                author_name_includes,
-                author_name_excludes,
-                author_email_includes,
-                author_email_excludes,
-            )
-        ]
-
-        for version, commit in zip(
-            cls.from_messages(
-                messages=(str(commit.message) for commit in commits),
-                message_includes=message_includes,
-                message_excludes=message_excludes,
-                major_regexes=major_regexes,
-                minor_regexes=minor_regexes,
-                patch_regexes=patch_regexes,
-                unrecognized_message=unrecognized_message,
-            ),
-            commits,
-            strict=False,
-        ):
-            yield VersionCommit(version, commit)
+            for version, commit in zip(
+                cls.from_messages(
+                    # enq: GitPython types commit messages as str | bytes
+                    (str(commit.message) for commit in commits),  # noqa: PYNUDGER25
+                    message_includes=message_includes,
+                    message_excludes=message_excludes,
+                    major_regexes=major_regexes,
+                    minor_regexes=minor_regexes,
+                    patch_regexes=patch_regexes,
+                    unrecognized_message=unrecognized_message,
+                ),
+                commits,
+                strict=False,
+            ):
+                yield VersionCommit(version, commit)
 
     @classmethod
+    # enq: filters are separate, optional and keyword-only options
     def from_messages(  # noqa: PLR0913
         cls,
         messages: Iterable[str],
+        *,
         message_includes: OptionalStringsOrPatterns = None,
         message_excludes: OptionalStringsOrPatterns = None,
         major_regexes: OptionalStringsOrPatterns = None,
@@ -416,7 +418,7 @@ class Version:
                 Default: Matches messages starting with `fix:`.
             unrecognized_message:
                 The behavior for unrecognized messages. It can be
-                either "exclude" or "error".
+                either "ignore" or "error".
                 Default: "ignore"
 
         Yields:
@@ -427,20 +429,22 @@ class Version:
         for message in messages:
             version = cls.from_message(
                 message,
-                message_includes,
-                message_excludes,
-                major_regexes,
-                minor_regexes,
-                patch_regexes,
-                unrecognized_message,
+                message_includes=message_includes,
+                message_excludes=message_excludes,
+                major_regexes=major_regexes,
+                minor_regexes=minor_regexes,
+                patch_regexes=patch_regexes,
+                unrecognized_message=unrecognized_message,
                 version=version,
             )
             yield version
 
     @classmethod
+    # enq: filters are separate, optional and keyword-only options
     def from_message(  # noqa: PLR0913
         cls,
         message: str,
+        *,
         message_includes: OptionalStringsOrPatterns = None,
         message_excludes: OptionalStringsOrPatterns = None,
         major_regexes: OptionalStringsOrPatterns = None,
@@ -478,7 +482,7 @@ class Version:
                 Default: Matches messages starting with `fix:`.
             unrecognized_message:
                 The behavior for unrecognized messages. It can be
-                either "exclude" or "error".
+                either "ignore" or "error".
                 Default: "ignore"
             version:
                 Starting version from which a new version is calculated
@@ -502,17 +506,18 @@ class Version:
         ):
             return version
 
-        for semantic_component, regex in _regex.semantic.components(
-            major_regexes, minor_regexes, patch_regexes
+        for regex, bump in zip(
+            _regex.semantic.components(major_regexes, minor_regexes, patch_regexes),
+            (version.bump_major, version.bump_minor, version.bump_patch),
+            strict=True,
         ):
             if regex is not None and regex.match(message):
-                return getattr(version, f"bump_{semantic_component}")()
+                return bump()
 
         if unrecognized_message == "error":
             raise error.MessageUnrecognizedError(message)
 
-        # Based on hypothesis testing this line may not run
-        return version  # pragma: no cover
+        return version
 
     @classmethod
     def from_string(cls, version: str) -> Version:
@@ -540,11 +545,8 @@ class Version:
         except ValueError as e:
             raise error.VersionFormatError(version) from e
         try:
-            return cls(
-                major=int(major),
-                minor=int(minor),
-                patch=int(patch),
-            )
+            # enq: parsing of user input, failures raise VersionNotNumericError
+            return cls(int(major), int(minor), int(patch))  # noqa: PYNUDGER25
         except ValueError as e:
             raise error.VersionNotNumericError(version) from e
 
@@ -575,7 +577,8 @@ class Version:
         """
         return type(self)(self.major, self.minor, 1 + self.patch)
 
-    def __str__(self) -> str:  # pyright: ignore [reportImplicitOverride]
+    @typing.override
+    def __str__(self) -> str:
         """Return the version as a string.
 
         Returns:
@@ -584,7 +587,8 @@ class Version:
         """
         return f"{self.major}.{self.minor}.{self.patch}"
 
-    def __hash__(self) -> int:  # pyright: ignore [reportImplicitOverride]
+    @typing.override
+    def __hash__(self) -> int:
         """Unique hash of the version.
 
         Returns:
@@ -592,7 +596,8 @@ class Version:
         """
         return hash((self.major, self.minor, self.patch))
 
-    def __eq__(self, other: object) -> bool:  # pyright: ignore [reportImplicitOverride]
+    @typing.override
+    def __eq__(self, other: object) -> bool:
         """Check if two versions are equal.
 
         Important:
@@ -616,11 +621,7 @@ class Version:
         """
         other = self._cast(other)
 
-        return (
-            self.major == other.major
-            and self.minor == other.minor
-            and self.patch == other.patch
-        )
+        return self.major == other.major and self.minor == other.minor and self.patch == other.patch
 
     def __lt__(self, other: object) -> bool:
         """Check if this version is smaller than `other`.
@@ -647,18 +648,15 @@ class Version:
         """
         other = self._cast(other)
 
-        return (
-            self.major < other.major
-            or (self.major == other.major and self.minor < other.minor)
-            or (
-                self.major == other.major
-                and self.minor == other.minor
-                and self.patch < other.patch
-            )
-        )
+        return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
-    def _cast(self, other: typing.Any) -> Version:
+    def _cast(self, other: object) -> Version:
         """Cast `other` to `Version` (if possible).
+
+        Args:
+            other:
+                Object to cast. Should be an instance of `Version`
+                or string (e.g. `"2.3.7"`).
 
         Raises:
             NotImplementedError:
@@ -688,85 +686,3 @@ class VersionCommit:
 
     version: Version = Version(0, 0, 0)
     commit: git.Commit | None = None
-
-
-def _include_commit(  # noqa: PLR0913
-    commit: git.Commit,
-    path_includes: OptionalStringsOrPatterns = None,
-    path_excludes: OptionalStringsOrPatterns = None,
-    author_name_includes: OptionalStringsOrPatterns = None,
-    author_name_excludes: OptionalStringsOrPatterns = None,
-    author_email_includes: OptionalStringsOrPatterns = None,
-    author_email_excludes: OptionalStringsOrPatterns = None,
-) -> bool:
-    """Check whether to include a given commit.
-
-    Args:
-        commit:
-            Commit to verify.
-        path_includes:
-            Path regexes against which the commit is included.
-            Default: All paths are included.
-        path_excludes:
-            Path regexes against which the commit is excluded.
-            Default: No paths are excluded.
-        author_name_includes:
-            Commit author names regexes against
-            which the commit is included.
-            Default: All names are included.
-        author_name_excludes:
-            Commit author names regexes against
-            which the commit is excluded.
-            Default: No names are excluded.
-        author_email_includes:
-            Commit author email regexes against
-            which the commit is included.
-            Default: All emails are included.
-        author_email_excludes:
-            Commit author email regexes against
-            which the commit is excluded.
-            Default: No emails are excluded.
-
-    """
-    return (
-        _maybe_match(
-            commit.author.name, author_name_includes, author_name_excludes
-        )
-        and _maybe_match(
-            commit.author.email, author_email_includes, author_email_excludes
-        )
-        and _regex.match.path(
-            commit, _regex.process(path_includes), _regex.process(path_excludes)
-        )
-    )
-
-
-def _maybe_match(
-    variable: str | None,
-    includes: OptionalStringsOrPatterns,
-    excludes: OptionalStringsOrPatterns,
-) -> bool:
-    """Optionally match variable against includes and excludes.
-
-    Important:
-        `None` is considered as matching.
-
-    Args:
-        variable:
-            Variable to be matched
-        includes:
-            Optional list of includes
-        excludes:
-            Optional list of excludes
-
-    Returns:
-        `True` if the variable matches the constraints.
-
-    """
-    # Escape hatch if commit's author name or email is missing
-    # This situation is highly unlikely to happen
-    if variable is None:  # pragma: no cover
-        return True
-    return _regex.match.item(
-        variable, _regex.process(includes), _regex.process(excludes)
-    )

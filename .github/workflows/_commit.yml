@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "_Commit"
+
+on:
+  workflow_call:
+
+# enq: the only way to set permissions to none in GH Actions
+permissions: {} # yamllint disable-line rule:braces
+
+jobs:
+  _commit:
+    name: "_Commit"
+    permissions:
+      contents: "read"
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+    # yamllint disable rule:line-length
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_run-check.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+    # yamllint enable rule:line-length
+    with:
+      check: "commit"
+      arguments: >-
+        /dev/stdin <<< "$(git log -1 --format=%s)"
+      ref: "${{ github.event.pull_request.head.sha }}"
+...

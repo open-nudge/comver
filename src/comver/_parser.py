@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -11,6 +11,9 @@ import argparse
 import textwrap
 
 from comver._version import _version
+
+# enq: single public factory, subparsers are private implementation details
+# noqa-file: PYNUDGER46
 
 
 def root() -> argparse.ArgumentParser:
@@ -46,7 +49,8 @@ def root() -> argparse.ArgumentParser:
     return parser
 
 
-def _calculate(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUnknownParameterType, reportMissingParameterType]
+# enq: argparse does not expose a public type of the subparsers action
+def _calculate(subparsers) -> None:  # noqa: ANN001
     """Create `calculate` subcommand subparser.
 
     Args:
@@ -79,9 +83,7 @@ def _calculate(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUn
         "--sha",
         action="store_true",
         required=False,
-        help=(
-            "Return sha of the commit related to the version (usable for verification)"
-        ),
+        help=("Return sha of the commit related to the version (usable for verification)"),
     )
 
     parser.add_argument(
@@ -92,7 +94,8 @@ def _calculate(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUn
     )
 
 
-def _verify(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUnknownParameterType, reportMissingParameterType]
+# enq: argparse does not expose a public type of the subparsers action
+def _verify(subparsers) -> None:  # noqa: ANN001
     """Create `verify` subcommand subparser.
 
     Args:
@@ -128,5 +131,3 @@ def _verify(subparsers) -> None:  # noqa: ANN001  # pyright: ignore [reportUnkno
         "checksum",
         help="Checksum of the configuration to check against.",
     )
-
-    return parser

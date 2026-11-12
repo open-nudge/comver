@@ -1,0 +1,126 @@
+# SPDX-FileCopyrightText: © 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "Attestation Verify"
+description: >
+  Verify that every file is attested under its exact name for the released
+  commit and tag by a template workflow at the template commit in use.
+
+inputs:
+  signers:
+    description: >
+      JSON object mapping template workflows (file names without .yml) to
+      arrays of files or globs they sign, e.g. {"signer": ["*.whl"]}.
+      Files are in the directory (flat, names are matched against the
+      attested subject names), unmatched globs fail, empty strings are
+      ignored (so callers can drop files conditionally)
+    required: true
+  directory:
+    description: "Directory containing the files"
+    default: "."
+  verify:
+    description: >
+      Whether to verify the attestations (releases), otherwise only the files
+      and their digests are resolved
+      (nothing is attested, e.g. during pull requests)
+    default: "true"
+  bundles:
+    description: >
+      Whether to keep all attestations of each file as <file>.sigstore.jsonl
+      next to it (offline verification by users)
+    default: "false"
+  token:
+    description: "Token with attestations read permission"
+    default: "${{ github.token }}"
+
+outputs:
+  statements:
+    description: "sha256sum-like lines of each verified signed statement and its file"
+    value: "${{ steps.verify.outputs.statements }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Get files"
+      id: "files"
+      shell: "bash"
+      env:
+        # fromJSON fails the step on invalid input before the shell runs
+        SIGNERS: "${{ toJSON(fromJSON(inputs.signers)) }}"
+      # enq: shell indentation is more readable
+      # yamllint disable rule:indentation
+      # Every file or glob on its own line (as expected by digests action)
+      run: |
+        {
+          echo "paths<<EOF"
+          jq --raw-output '.[][] | select(. != "")' <<< "${SIGNERS}"
+          echo "EOF"
+        } >> "${GITHUB_OUTPUT}"
+      # yamllint enable rule:indentation
+    - name: "Get digests"
+      id: "digests"
+      # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+      # yamllint disable rule:line-length
+      # enq: temporary, opentemplate main commits are untagged (no release yet)
+      uses: "open-nudge/opentemplate/.github/actions/digests@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      # yamllint enable rule:line-length
+      with:
+        directory: "${{ inputs.directory }}"
+        paths: "${{ steps.files.outputs.paths }}"
+    - name: "Verify attestations"
+      id: "verify"
+      # Without attestations (e.g. pull requests) only the files and their
+      # digests are resolved (unmatched globs fail the digests step)
+      if: >
+        inputs.verify == 'true'
+      shell: "bash"
+      working-directory: "${{ inputs.directory }}"
+      env:
+        GH_TOKEN: "${{ inputs.token }}"
+        DIGESTS: "${{ steps.digests.outputs.digests }}"
+        SIGNERS: "${{ inputs.signers }}"
+        BUNDLES: "${{ inputs.bundles }}"
+        TEMPLATE_REPOSITORY: "${{ job.workflow_repository }}"
+        TEMPLATE_SHA: "${{ job.workflow_sha }}"
+      # enq: complex script, indentation rules would make it unreadable
+      # yamllint disable rule:indentation rule:line-length
+      # Bundle is named sha256:<digest>.jsonl (sha256-<digest>.jsonl on
+      # Windows), hence downloaded alone into its own directory
+      run: |
+        echo "statements<<EOF" >> "${GITHUB_OUTPUT}"
+        shopt -s dotglob
+        while read -r signer pattern; do
+          # enq: glob expansion of the pattern is intentional
+          # shellcheck disable=SC2086
+          for file in ${pattern}; do
+            digest="$(awk -v name="${file}" '$2 == name { print $1; exit }' <<< "${DIGESTS}")"
+            download="$(mktemp -d)"
+            (cd "${download}" && gh attestation download "${OLDPWD}/${file}" --repo "${GITHUB_REPOSITORY}" --limit 1000)
+            bundle=("${download}"/*.jsonl)
+            gh attestation verify "${file}" \
+              --bundle "${bundle[0]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${TEMPLATE_REPOSITORY}/.github/workflows/${signer}.yml" \
+              --signer-digest "${TEMPLATE_SHA}" \
+              --source-digest "${GITHUB_SHA}" \
+              --source-ref "${GITHUB_REF}" \
+              --deny-self-hosted-runners \
+              --format json \
+              | jq --exit-status --raw-output --arg name "${file}" --arg digest "${digest}" \
+                '.[] | select(any(.verificationResult.statement.subject[]; .name == $name and .digest.sha256 == $digest))
+                | .attestation.bundle.dsseEnvelope.payload' \
+              | while read -r payload; do
+                statement="$(base64 --decode <<< "${payload}" | sha256sum)"
+                echo "${statement%% *}  ${file}"
+              done >> "${GITHUB_OUTPUT}"
+            if [[ "${BUNDLES}" == "true" ]]; then
+              cp -- "${bundle[0]}" "${file}.sigstore.jsonl"
+            fi
+          done
+        done < <(jq --raw-output 'to_entries[] | .key as $signer | .value[] | select(. != "") | "\($signer) \(.)"' <<< "${SIGNERS}")
+        echo "EOF" >> "${GITHUB_OUTPUT}"
+      # yamllint enable rule:indentation rule:line-length
+...

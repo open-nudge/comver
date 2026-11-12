@@ -1,0 +1,149 @@
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# enq: reusable workflows offload concurrency limits to the caller
+name: "_Security SBOM Python"  # zizmor: ignore[concurrency-limits]
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "The ref to checkout"
+        type: "string"
+        default: ""
+      digests:
+        description: >
+          sha256sum of the distributions (release build workflow output),
+          if given they are installed and the SBOMs attested against them
+        type: "string"
+        default: ""
+      tag:
+        description: >
+          Release tag the SARIFs are uploaded under, set together with ref
+          (default: '' - the triggering ref)
+        type: "string"
+        default: ""
+      upload-sarif:
+        description: "Upload the Trivy SARIFs to Security tab"
+        type: "boolean"
+        default: false
+
+# enq: the only way to set permissions to none in GH Actions
+permissions: {} # yamllint disable-line rule:braces
+
+jobs:
+  # Separate job before the matrix, as anonymous API limit (60/hour) is per IP, shared by macOS runners
+  trivy-version:
+    name: "Trivy Version"
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 5
+    outputs:
+      version: "${{ steps.trivy-version.outputs.version }}"
+    steps:
+      - name: "Harden Runner"
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        with:
+          disable-sudo-and-containers: true
+          egress-policy: "block"
+          allowed-endpoints: >
+            *.actions.githubusercontent.com:443
+            api.github.com:443
+            results-receiver.actions.githubusercontent.com:443
+      # Newest release older than 7 days (as the Dependabot cooldown),
+      # the version used is recorded in the SARIFs (tool.driver.version)
+      - name: "Get Trivy version"
+        id: "trivy-version"
+        # enq: shell indentation is more readable
+        # yamllint disable rule:indentation
+        run: |
+          # Anonymous, the aquasecurity IP allow list refuses tokens (GITHUB_TOKEN too)
+          curl --silent --show-error --retry 3 --output releases.json \
+            https://api.github.com/repos/aquasecurity/trivy/releases
+          # API errors are objects whose message is shown (e.g. anonymous limit of
+          # 60 requests/hour per IP), an empty version would install the latest release
+          version="$(jq --raw-output '
+            if type == "array" then . else error(.message) end
+            | map(select(.prerelease | not)
+              | select(.published_at | fromdateiso8601 < now - 604800))
+            | .[0].tag_name // error("no Trivy release older than 7 days")' releases.json)"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+        # yamllint enable rule:indentation
+
+  security-sbom-python:
+    name: >
+      Security SBOM Python |
+      ${{ matrix.tier.name }} |
+      python-${{ matrix.python-version }} |
+      ${{ matrix.os }}
+    needs:
+      - "trivy-version"
+    strategy:
+      # A failed license check must not cancel the other scans (and uploads)
+      fail-fast: false
+      # GitHub allows 80 content-creating API requests per minute
+      # (attestations, SARIF uploads), not configurable
+      max-parallel: 5
+      matrix:
+        python-version:
+          #
+          #           DO NOT EDIT UNTIL end marker
+          #
+          # [[[cog
+          # import cog
+          # import cogeol
+          #
+          # for version in reversed(cogeol.scientific()):
+          #     cog.outl(f'          - "{version["cycle"]}"')
+          # ]]]
+          - "3.13"
+          - "3.14"
+          - "3.15"
+          # [[[end]]] (sum: 5IRAfcdF4m)
+        os:
+          - "ubuntu-latest"
+          - "macos-latest"
+          - "windows-latest"
+        tier:
+          - name: "core"
+            groups: "--no-default-groups"
+          - name: "extras"
+            groups: "--no-default-groups --all-extras"
+          - name: "dev"
+            groups: "--all-extras --all-groups"
+        # core is a subset of extras, its exact SBOM is needed only for releases
+        exclude:
+          - tier:
+              name: "${{ inputs.digests == '' && 'core' || '' }}"
+              groups: "--no-default-groups"
+    permissions:
+      actions: "read" # https://github.com/github/codeql-action/issues/2117
+      security-events: "write" # Needed to upload SARIF file to tab
+      contents: "read"
+      attestations: "write" # Needed to verify and upload attestation
+      id-token: "write" # Needed to get GH Token to attest
+      artifact-metadata: "write" # Needed to create artifact metadata
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+    # yamllint disable rule:line-length
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_sbom.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+    # yamllint enable rule:line-length
+    with:
+      type: "python"
+      # enq: long expression, splitting is unreadable
+      # yamllint disable rule:line-length
+      name: "python-${{ matrix.tier.name }}-${{ matrix.python-version }}-${{ matrix.os }}"
+      # yamllint enable rule:line-length
+      groups: "${{ matrix.tier.groups }}"
+      os: "${{ matrix.os }}"
+      python-version: "${{ matrix.python-version }}"
+      ref: "${{ inputs.ref }}"
+      tag: "${{ inputs.tag }}"
+      digests: "${{ inputs.digests }}"
+      # Licenses matter for distributed tiers only (core, extras)
+      licenses: "${{ matrix.tier.name != 'dev' }}"
+      trivy-version: "${{ needs.trivy-version.outputs.version }}"
+      upload-sarif: "${{ inputs.upload-sarif }}"
+...

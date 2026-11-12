@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -7,72 +7,67 @@
 
 from __future__ import annotations
 
+import argparse
 import typing
 
 import pytest
 
 from comver import _cli, _subcommand
 
+# enq: pytest requires the test_ prefix, which pynudger counts as a shared word
+# noqa-file: PYNUDGER43
 
-@pytest.mark.parametrize("format", ("line", "json"))
+# enq: tests verify the output of the private implementation directly
+_VERSION, _SHA, _CHECKSUM = _subcommand._calculate(  # noqa: SLF001
+    argparse.Namespace(sha=True, checksum=True, format="line"),
+).split()
+"""Current version, its commit sha and configuration checksum."""
+
+
+@pytest.mark.parametrize("output", ("line", "json"))
 @pytest.mark.parametrize("sha", (True, False))
 @pytest.mark.parametrize("checksum", (True, False))
-def test_smoke_calculate(
-    format: typing.Literal["line", "json"],  # noqa: A002
-    sha: bool,  # noqa: FBT001
-    checksum: bool,  # noqa: FBT001
+def test_calculate(
+    output: typing.Literal["line", "json"],
+    *,
+    sha: bool,
+    checksum: bool,
 ) -> None:
     """Smoke test calculate subcommand.
 
     Args:
-        format:
+        output:
             Either `line` or `json` corresponding to `calculate`'s
-            CLI arguments.
+            `--format` CLI argument.
         sha:
             Whether to output `sha` as well.
         checksum:
             Whether to output `checksum` as well.
 
     """
-    args = ["calculate", "--format", format]
+    args = ["calculate", "--format", output]
     if sha:
         args.append("--sha")
     if checksum:
         args.append("--checksum")
-    try:
+    with pytest.raises(SystemExit) as e:
         _cli.main(args)
-    except SystemExit as e:
-        assert e.code == 0  # noqa: PT017
+    assert e.value.code == 0
 
 
 @pytest.mark.parametrize(
     ("version", "sha", "checksum", "code"),
     (
-        # Neither version, nor sha, nor checksum  will exist in this git tree
-        (
-            "99999.99999.99999",
-            "randomShaNonExistent",
-            "randomChecksumNonExistent",
-            1,
-        ),
+        # Checksum of the configuration does not match
+        (_VERSION, _SHA, "randomChecksumNonExistent", 1),
         # Neither version, nor sha will exist in this git tree
-        (
-            "99999.99999.99999",
-            "randomShaNonExistent",
-            _subcommand._calculate(pytest.ComverCalculateArgs).split()[2],  # noqa: SLF001  # pyright: ignore [reportUnknownArgumentType, reportAttributeAccessIssue]
-            1,
-        ),
-        # Obtain current commit sha (which is guaranteed to be within the tree)
-        # Assign random version which has small chance of real life occurrence
-        # Should return 1 but for different reasons
-        (
-            "99999.99999.99999",
-            *_subcommand._calculate(pytest.ComverCalculateArgs).split()[1:],  # noqa: SLF001  # pyright: ignore [reportUnknownArgumentType, reportAttributeAccessIssue]
-            1,
-        ),
-        # Calculate current version and its sha counterpart
-        # Verify should not return an error in such case
-        (*(_subcommand._calculate(pytest.ComverCalculateArgs).split()), 0),  # noqa: SLF001  # pyright: ignore [reportUnknownArgumentType, reportAttributeAccessIssue]
+        ("99999.99999.99999", "randomShaNonExistent", _CHECKSUM, 1),
+        # Sha is within the tree, but corresponds to a different version
+        ("99999.99999.99999", _SHA, _CHECKSUM, 1),
+        # Version is within the tree, but sha is not
+        (_VERSION, "randomShaNonExistent", _CHECKSUM, 1),
+        # Current version and its sha counterpart verify successfully
+        (_VERSION, _SHA, _CHECKSUM, 0),
     ),
 )
 def test_verify(
@@ -96,7 +91,6 @@ def test_verify(
             Either `0` (proper execution) or `1` (error).
 
     """
-    try:
+    with pytest.raises(SystemExit) as e:
         _cli.main(["verify", version, sha, checksum])
-    except SystemExit as e:
-        assert e.code == code  # noqa: PT017
+    assert e.value.code == code

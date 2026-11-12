@@ -1,34 +1,56 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 ---
-name: "SBOM Upload"
+name: "SARIF Upload"
 description: >
-  Predefined SBOM upload including GitHub SHAs and proper identifiers
+  Upload a SARIF file as an artifact (outputting its digests, to be signed
+  by an attestation job of the calling workflow) and summarize its findings
+  in the job summary, or upload it to GitHub code scanning
 
 inputs:
   file:
     description: >
-      Name of the artifact in the GitHub Actions UI
+      Path to the SARIF file
     default: ""
   name:
     description: >
-      A path to the file to upload (and artifact name)
+      Name of the artifact (default: '' - no artifact upload)
     default: ""
   sarif:
     description: >
-      Whether the artifact is a SARIF file
+      Whether to upload the file to GitHub code scanning
     default: "false"
+  category:
+    description: >
+      Code scanning category, distinguishes uploads of the same tool
+      (default: '' - derived from the workflow and job)
+    default: ""
+  ref:
+    description: >
+      Full Git reference the SARIF belongs to, e.g. refs/tags/<tag>
+      (default: '' - the triggering ref), set together with sha
+    default: ""
+  sha:
+    description: >
+      Commit SHA the SARIF belongs to
+      (default: '' - the triggering commit), set together with ref
+    default: ""
+
+outputs:
+  digests:
+    description: >
+      sha256sum of the file (basename, as stored in the artifact),
+      empty if no artifact is uploaded
+    value: "${{ steps.digests.outputs.digests }}"
 
 runs:
   using: "composite"
   steps:
     - name: "Upload artifact"
-      # yamllint disable rule:line-length
-      uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" # v4.6.2
-      # yamllint enable rule:line-length
+      uses: "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9" # v7.0.2
       if: >
         inputs.name != ''
       with:
@@ -36,14 +58,36 @@ runs:
         path: "${{ inputs.file }}"
         retention-days: 7
         overwrite: true
+    - name: "Get digests"
+      id: "digests"
+      if: >
+        inputs.name != ''
+      # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+      # yamllint disable rule:line-length
+      # enq: temporary, opentemplate main commits are untagged (no release yet)
+      uses: "open-nudge/opentemplate/.github/actions/digests@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      # yamllint enable rule:line-length
+      with:
+        paths: "${{ inputs.file }}"
+    # In the scanner job only (not in the Security tab upload),
+    # findings are visible without GitHub Code Security
+    - name: "Summarize findings"
+      if: >
+        inputs.sarif != 'true'
+      # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+      # yamllint disable rule:line-length
+      # enq: temporary, opentemplate main commits are untagged (no release yet)
+      uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      # yamllint enable rule:line-length
+      with:
+        file: "${{ inputs.file }}"
     - name: "Upload SARIF file to GitHub Advanced Security Dashboard"
       if: >
         inputs.sarif == 'true'
-      # SARIF upload may fail if there is no integration enabled
-      continue-on-error: true
-      # yamllint disable rule:line-length
-      uses: "github/codeql-action/upload-sarif@fca7ace96b7d713c7035871441bd52efbe39e27e" # v3.28.19
-      # yamllint enable rule:line-length
+      uses: "github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370" # v4.39.1
       with:
         sarif_file: "${{ inputs.file }}"
+        category: "${{ inputs.category }}"
+        ref: "${{ inputs.ref }}"
+        sha: "${{ inputs.sha }}"
 ...

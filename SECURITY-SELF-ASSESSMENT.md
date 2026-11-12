@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -73,7 +73,7 @@ created in and tailored largely towards Python.
 
 ### Actions
 
-- All security features are provided by
+- Core security features are provided by
     [opentemplate](https://github.com/open-nudge/opentemplate) [](templateskip)
 
 ### Goals
@@ -103,16 +103,17 @@ __It should be extended by adding project-specific security information.__
 
 <!-- pyml disable-num-lines 5 line-length-->
 
-| Component | Applicability | Description of Importance                                                                                                                                                                                                                      |
-| --------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| template  | Critical      | Base GitHub template of the repository provided by `opennudge`. Used to provide initial security posture (pipelines, pre-commit, practices, hardening etc.) See [open-nudge/comver](https://github.com/open-nudge/comver) for more information |
+| Component | Applicability | Description of Importance                                                                                                                                                                                                                                             |
+| --------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| template  | Critical      | Base GitHub template of the repository provided by `opennudge`. Used to provide initial security posture (pipelines, prek, practices, hardening etc.) See [open-nudge/opentemplate](https://github.com/open-nudge/opentemplate) [](templateskip) for more information |
 
 ## Project compliance
 
 Project tries to comply with the following security standards:
 
-- [SLSA](https://slsa.dev/) - L3+ if the project is public or coming
-    from a GitHub Enterprise Account with Advanced Security, L2 otherwise
+- [SLSA](https://slsa.dev/) - Build L3 for attested releases (public
+    repositories, or private ones on GitHub Enterprise Cloud),
+    L0 otherwise (no attestations are created)
 - The project is currently not third-party audited or verified
 
 ## Secure development practices
@@ -131,7 +132,8 @@ You can reach out to us by
 [Private Security Reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
 or by:
 
-- means of communication provided at the account level [here](https://github.com/open-nudge)
+- means of communication provided at the
+    [open-nudge account level](https://github.com/open-nudge)
 - opening an issue in the repository (somebody will get back to you)
 
 ### Ecosystem
@@ -142,19 +144,19 @@ This project is a part of the Python ecosystem.
 
 The [`open-nudge/comver`](https://github.com/open-nudge/comver)
 security policy is maintained in the
-[`SECURITY.md`](https://github.com/open-nudge/comver/blob/master/SECURITY.md)
+[`SECURITY.md`](https://github.com/open-nudge/comver/blob/main/SECURITY.md)
 file.
 
 ### Responsible disclosure practice
 
 The [`open-nudge/comver`](https://github.com/open-nudge/comver)
 accepts vulnerability reports as outlined in the security policy defined in
-[`SECURITY.md`](https://github.com/open-nudge/comver/blob/master/SECURITY.md#reporting-a-vulnerability.)
+[`SECURITY.md`](https://github.com/open-nudge/comver/blob/main/SECURITY.md#reporting-a-vulnerability)
 file.
 
 ### Incident response
 
-As defined in [`SECURITY.md`](https://github.com/open-nudge/cogeol/blob/master/SECURITY.md#reporting-a-vulnerability.),
+As defined in [`SECURITY.md`](https://github.com/open-nudge/comver/blob/main/SECURITY.md#reporting-a-vulnerability),
 usually response should take up to a few working days, if not please reach out
 at `security@opennudge.com`.
 

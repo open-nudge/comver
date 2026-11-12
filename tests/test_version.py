@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import re
 import typing
 
 import git
@@ -21,35 +22,28 @@ import comver
 if typing.TYPE_CHECKING:
     import pathlib
 
+    from collections.abc import Callable
 
-def create_version(commit_types: list[str]) -> comver.Version:
-    """Create version based on commit types.
+# enq: pytest requires the test_ prefix, which pynudger counts as a shared word
+# noqa-file: PYNUDGER43
 
-    Args:
-        commit_types:
-            List of commit types. Contain only `fix` and `feat` types
-            with optional `!` at the end.
+Commits = tuple[tuple[str, ...], ...]
+"""Commits to create (each is a message followed by the paths it changes)."""
 
-    Returns:
-        Version based on commit types.
-
-    """
-    version = pytest.ComverVersionTester()  # pyright: ignore [reportAttributeAccessIssue]
-    for commit_type in commit_types:
-        version.bump(commit_type)
-
-    return comver.Version(*version.to_tuple())  # pyright: ignore [reportUnknownArgumentType]
+Strings = tuple[str, ...]
+"""Regexes (or versions) passed as parameters."""
 
 
 @pytest.mark.parametrize("major_regexes", (None, (".*", "bbb")))
 @pytest.mark.parametrize("minor_regexes", (None, (".*", "ccc")))
 @pytest.mark.parametrize("patch_regexes", (None, (".*", "ddd")))
 @given(commit_types=st.lists(st.sampled_from(["fix", "feat", "feat!", "fix!"])))
-def test_version_from_messages(
+def test_messages(
+    expected: Callable[..., comver.Version],
     commit_types: list[str],
-    major_regexes: tuple[str] | None,
-    minor_regexes: tuple[str] | None,
-    patch_regexes: tuple[str] | None,
+    major_regexes: Strings | None,
+    minor_regexes: Strings | None,
+    patch_regexes: Strings | None,
 ) -> None:
     """Test `comver.Version.from_messages` method.
 
@@ -61,6 +55,8 @@ def test_version_from_messages(
     > as it is __way faster__ to run than creating actual `git` repos.
 
     Args:
+        expected:
+            Expected version calculator (independent of `comver`).
         commit_types:
             List of commit types. Contain only `fix` and `feat` types
             with optional `!` at the end.
@@ -72,40 +68,34 @@ def test_version_from_messages(
             Regular expression for patch version.
     """
     messages = [f"{commit_type}: bla bla bla" for commit_type in commit_types]
-    test_version = create_version(commit_types)
+    test_version = expected(commit_types)
 
     version = comver.Version()
-    # Iterate over iterator to get the last element
-    for version in comver.Version.from_messages(  # noqa: B007
+    for output in comver.Version.from_messages(
         messages,
         major_regexes=major_regexes,
         minor_regexes=minor_regexes,
         patch_regexes=patch_regexes,
     ):
-        pass
+        version = output
 
     # ".*" swallows all commits, all should be major versions
     if major_regexes:
         assert version.major == len(messages)
     # We can only assert something about major if minor swallows all
-    elif not major_regexes and minor_regexes:
+    elif minor_regexes:
         assert version.major == test_version.major
     # If none are specified, it should be a standard version
     else:
-        assert comver.Version.from_string(str(test_version)) == version
+        assert version == test_version
 
 
 def _example(
-    versions: tuple[str, ...],
-    path_includes: tuple[str, ...] | None = None,
-    path_excludes: tuple[str, ...] | None = None,
-    commits: tuple[tuple[str, ...], ...] | None = None,
-) -> tuple[
-    tuple[tuple[str, ...], ...],
-    tuple[str, ...] | None,
-    tuple[str, ...] | None,
-    tuple[str, ...],
-]:
+    versions: Strings,
+    path_includes: Strings | None = None,
+    path_excludes: Strings | None = None,
+    commits: Commits | None = None,
+) -> tuple[Commits, Strings | None, Strings | None, Strings]:
     """Pair commits with versions expected at each of them.
 
     Args:
@@ -120,7 +110,7 @@ def _example(
             Default: Source and docs changes with an empty commit between.
 
     Returns:
-        Arguments of `test_version_from_git_paths`.
+        Arguments of `test_paths`.
 
     """
     if commits is None:
@@ -171,12 +161,12 @@ def _example(
         ),
     ),
 )
-def test_version_from_git_paths(
+def test_paths(
     tmp_path: pathlib.Path,
-    commits: tuple[tuple[str, ...], ...],
-    path_includes: tuple[str, ...] | None,
-    path_excludes: tuple[str, ...] | None,
-    versions: tuple[str, ...],
+    commits: Commits,
+    path_includes: Strings | None,
+    path_excludes: Strings | None,
+    versions: Strings,
 ) -> None:
     """Test path based filtering of `comver.Version.from_git` method.
 
@@ -208,12 +198,13 @@ def test_version_from_git_paths(
         _ = repo.index.commit(message)
 
     included = {
-        output.commit.hexsha: str(output.version)  # pyright: ignore [reportOptionalMemberAccess]
+        output.commit.hexsha: f"{output.version}"
         for output in comver.Version.from_git(
             path_includes=path_includes,
             path_excludes=path_excludes,
             repository=repo,
         )
+        if output.commit is not None
     }
 
     # Excluded commits keep the version of the previous commit
@@ -226,22 +217,30 @@ def test_version_from_git_paths(
     assert tuple(actual) == versions
 
 
-def test_unrecognized_commit_type() -> None:
-    """Test `comver.Version.bump` method with unrecognized commit type."""
+def test_unrecognized_error() -> None:
+    """Unrecognized message raises if `unrecognized_message="error"`."""
     with pytest.raises(comver.error.MessageUnrecognizedError):
-        _ = comver.Version.from_message(
-            "placeholder",
-            unrecognized_message="error",
-        )
+        _ = comver.Version.from_message("placeholder", unrecognized_message="error")
+
+
+def test_unrecognized_ignore() -> None:
+    """Unrecognized message keeps the version by default (it is ignored)."""
+    version = comver.Version(1, 2, 3)
+    assert comver.Version.from_message("placeholder", version=version) == version
+
+
+def test_patterns() -> None:
+    """Compiled patterns are accepted alongside string regexes."""
+    version = comver.Version.from_message(
+        "docs: add tutorial",
+        minor_regexes=(re.compile(r"^docs: "), "^never$"),
+    )
+    assert version == comver.Version(0, 1, 0)
 
 
 def test_hash() -> None:
     """Smoke test __hash__ function."""
-    assert hash(
-        comver.Version.from_string(
-            "0.1.0",
-        )
-    ) == hash(comver.Version(0, 1, 0))
+    assert hash(comver.Version.from_string("0.1.0")) == hash(comver.Version(0, 1, 0))
 
 
 @pytest.mark.parametrize("other", ("0.27.31", comver.Version(0, 0, 23)))
@@ -253,10 +252,12 @@ def test_comparison(other: str | comver.Version) -> None:
     > at the same time due to functools.total_ordering
     > which uses under the hood `__le__` and `__eq__`
 
+    Args:
+        other:
+            Version (or its string representation) smaller than `0.31.27`.
+
     """
-    assert other <= comver.Version.from_string(
-        "0.31.27",
-    )
+    assert other <= comver.Version.from_string("0.31.27")
 
 
 @pytest.mark.parametrize(
@@ -267,18 +268,15 @@ def test_comparison(other: str | comver.Version) -> None:
         (12, NotImplementedError),
     ),
 )
-def test_incorrect_comparison(
-    other: typing.Any, error: type[Exception]
-) -> None:
-    """Generic test of version comparisons.
+def test_incorrect_comparison(other: object, error: type[Exception]) -> None:
+    """Comparison with improper objects raises an error.
 
-    > [!IMPORTANT]
-    > This test goes through implemented `__lt__` and `__eq__`
-    > at the same time due to functools.total_ordering
-    > which uses under the hood `__le__` and `__eq__`
+    Args:
+        other:
+            Improper version (wrong string format or type).
+        error:
+            Expected exception type.
 
     """
     with pytest.raises(error):
-        assert other == comver.Version.from_string(
-            "0.31.27",
-        )
+        _ = other == comver.Version.from_string("0.31.27")

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -48,11 +48,11 @@ ideas, or want to report a bug, follow these steps:
 1. Read [ROADMAP](ROADMAP.md) to understand the project's goals.
 1. Read Developer's Certificate of Origin (DCO) in [DCO.md](DCO.md)
     (you must sign-off your PRs).
-1. Read [LICENSE](LICENSE.md).
+1. Read [LICENSE](LICENSE).
 1. Follow the steps in [Non-code contributions](#non-code-contributions)
     and report a bug or request a feature.
 1. Fork the repository
-    (see [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo)
+    (see [GitHub's guide to forking a repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo)
     for more information).
 
 ### Environment setup
@@ -60,26 +60,20 @@ ideas, or want to report a bug, follow these steps:
 Prerequisites (one time setup):
 
 1. Check you have Python 3.x installation available (as `python3` or `python`)
-1. Install `pdm` (see [official installation instructions](https://pdm-project.org/en/latest/))
-1. Enable `pep582` globally (see [official instructions](https://pdm-project.org/latest/usage/pep582/#enable-pep-582-globally))
+1. Install `uv` (see [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/))
 
 Change to the cloned directory and run:
 
 ```bash
-pdm setup
+uv run poe setup
 ```
 
-> [!CAUTION]
-> This project uses [PEP582](https://peps.python.org/pep-0582/) to manage dependencies.
-> Check `__pypackages__/README.md` for more information.
-
-<!-- vale off -->
-
 > [!TIP]
-> Check [here](https://pdm-project.org/latest/usage/pep582/#configure-ide-to-support-pep-582)
-> for more information on IDE configuration with PEP582.
-
-<!-- vale on -->
+> Dependencies are installed into the `.venv` virtual environment,
+> point your IDE to it. All tasks are run via `uv run poe <task>`.
+> Tests run against the installed (non-editable) package in a persistent
+> environment per Python version (`.venvs/<version>`), the project is
+> reinstalled only when its source changes.
 
 ### Source code
 
@@ -101,7 +95,7 @@ Keep the following in mind:
     testing if possible.
 - __Any changes need 100% test coverage__ - if not possible,
     explain why in the comments or PR description and exclude these lines).
-- __Your changes should pass [pre-commit hooks](https://pre-commit.com/)__.
+- __Your changes should pass [prek hooks](https://prek.j178.dev/)__.
 
 <!-- vale off -->
 
@@ -132,18 +126,9 @@ git commit -s -S -m "feat: add new feature"
 
 <!-- vale off -->
 
-> [!TIP]
-> You can use `pdm commit-guided` for interactive commit adhering to the guide.
-
-> [!TIP]
-> You can use `pdm commit` (same as `git commit -s -S`).
-
-> [!TIP]
-> You can use `pdm commit-fast`, a faster version of `commit-guided`.
-
 > [!NOTE]
 > Signing and commit messages are automatically checked
-> by the pre-commit hooks and CI/CD pipeline.
+> by the prek hooks and CI/CD pipeline.
 
 <!-- vale on -->
 
@@ -187,7 +172,7 @@ Other features:
 ### Merging pull requests
 
 Maintainers will merge your pull request __only after the CI/CD checks pass__.
-In general, if `pre-commit` checks pass, no major changes should be necessary.
+In general, if `prek` checks pass, no major changes should be necessary.
 
 <!-- vale off -->
 
@@ -202,7 +187,7 @@ in the PR.
 
 ## Coding style
 
-`pre-commit` hooks check most of the guidelines, but maintainers
+`prek` hooks check most of the guidelines, but maintainers
 reserve the right to ask for changes in the code style if necessary.
 
 In special cases you might want to ignore a certain style rule,

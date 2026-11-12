@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -6,12 +6,12 @@
 """Extensions and plugins integrating `comver` with third party systems.
 
 Most of the extensions are tailored to the Python ecosystem, and its
-packagae managers specifically.
+package managers specifically.
 
 __Currently supported third party tools:__
 
 - [`pdm`](https://pdm-project.org/en/latest/) package manager.
-- [`hatch`](https://hatch.pypa.io/1.9/plugins/version-source/reference/)
+- [`hatch`](https://hatch.pypa.io/latest/plugins/version-source/reference/)
     package manager.
 
 Warning:
@@ -35,7 +35,9 @@ if typing.TYPE_CHECKING:
     from comver.type_definitions import OptionalStringsOrPatterns
 
 
+# enq: filters are separate, optional and keyword-only options
 def pdm(  # noqa: PLR0913
+    *,
     message_includes: OptionalStringsOrPatterns = None,
     message_excludes: OptionalStringsOrPatterns = None,
     path_includes: OptionalStringsOrPatterns = None,
@@ -59,13 +61,13 @@ def pdm(  # noqa: PLR0913
     build-backend = "pdm.backend"
 
     requires = [
-        "comver>=0.1.0",
+        "comver>=2",
         "pdm-backend>=2",
     ]
 
     [tool.pdm.version]
     source = "call"
-    getter = "commition.plugin.pdm:git"
+    getter = "comver.plugin:pdm"
     ```
 
     This function uses
@@ -116,19 +118,18 @@ def pdm(  # noqa: PLR0913
             Default: From config OR matches messages starting with `fix:`.
         unrecognized_message:
             The behavior for unrecognized messages. It can be
-            either "exclude" or "error".
+            either "ignore" or "error".
             Default: From config OR "ignore"
         repository:
             The `git` repository.
-            Default: From config OR will be searched
-            in the parent directories.
+            Default: Searched in the parent directories.
 
     Returns:
         Calculated version as string (compatible with `pdm` interface).
 
     """
     version = VersionCommit()
-    for version in Version.from_git_configured(  # noqa: B007
+    for output in Version.from_git_configured(
         message_includes=message_includes,
         message_excludes=message_excludes,
         path_includes=path_includes,
@@ -143,16 +144,18 @@ def pdm(  # noqa: PLR0913
         unrecognized_message=unrecognized_message,
         repository=repository,
     ):
-        pass
+        version = output
 
-    return str(version.version)
+    return f"{version.version}"
 
 
-if find_spec("hatchling"):
+# enq: tests always install the hatchling extra (hatchling is available)
+if find_spec("hatchling"):  # pragma: no branch
     from hatchling.plugin import hookimpl
     from hatchling.version.source.plugin.interface import VersionSourceInterface
 
-    class ComverVersionSource(VersionSourceInterface):
+    # enq: class name is registered for hatchling (source = "comver")
+    class ComverVersionSource(VersionSourceInterface):  # noqa: PYNUDGER43
         """Get the project version for the `hatchling` build backend.
 
         This class implements the `VersionSourceInterface` from Hatchling
@@ -160,7 +163,7 @@ if find_spec("hatchling"):
         projects.
 
         Tip:
-            See [plugins](https://hatch.pypa.io/1.13/plugins/version-source/reference/)
+            See [plugins](https://hatch.pypa.io/latest/plugins/version-source/reference/)
             for more information
 
         This function uses
@@ -170,13 +173,15 @@ if find_spec("hatchling"):
 
         > [!IMPORTANT]
         > Plugin can also be configured by `[tool.hatch.version]`, not only
-        > `[tool.comver`]. The former takes precedence if both exist.
+        > `[tool.comver]`. The former takes precedence if both exist.
 
         """
 
-        PLUGIN_NAME: str = "comver"  # pyright: ignore [reportIncompatibleUnannotatedOverride]
+        PLUGIN_NAME: str = "comver"
 
-        def get_version_data(self) -> dict[str, str]:  # pyright: ignore [reportImplicitOverride]
+        @typing.override
+        # enq: method name is required by hatchling's VersionSourceInterface
+        def get_version_data(self) -> dict[str, str]:  # noqa: PYNUDGER4
             """Get the version data to be used by Hatchling.
 
             Returns:
@@ -184,35 +189,41 @@ if find_spec("hatchling"):
                 under the "version" key.
             """
             version = VersionCommit()
-            for version in Version.from_git_configured(  # noqa: B007
-                message_includes=self.config.get("message_includes"),  # pyright: ignore [reportUnknownArgumentType]
-                message_excludes=self.config.get("message_excludes"),  # pyright: ignore [reportUnknownArgumentType]
-                path_includes=self.config.get("path_includes"),  # pyright: ignore [reportUnknownArgumentType]
-                path_excludes=self.config.get("path_excludes"),  # pyright: ignore [reportUnknownArgumentType]
-                author_name_includes=self.config.get("author_name_includes"),  # pyright: ignore [reportUnknownArgumentType]
-                author_name_excludes=self.config.get("author_name_excludes"),  # pyright: ignore [reportUnknownArgumentType]
-                author_email_includes=self.config.get("author_email_includes"),  # pyright: ignore [reportUnknownArgumentType]
-                author_email_excludes=self.config.get("author_email_excludes"),  # pyright: ignore [reportUnknownArgumentType]
+            for output in Version.from_git_configured(
+                message_includes=self.config.get("message_includes"),
+                message_excludes=self.config.get("message_excludes"),
+                path_includes=self.config.get("path_includes"),
+                path_excludes=self.config.get("path_excludes"),
+                author_name_includes=self.config.get("author_name_includes"),
+                author_name_excludes=self.config.get("author_name_excludes"),
+                author_email_includes=self.config.get("author_email_includes"),
+                author_email_excludes=self.config.get("author_email_excludes"),
+                major_regexes=self.config.get("major_regexes"),
+                minor_regexes=self.config.get("minor_regexes"),
+                patch_regexes=self.config.get("patch_regexes"),
+                unrecognized_message=self.config.get("unrecognized_message"),
                 repository=self.root,
             ):
-                pass
+                version = output
 
-            return {"version": str(version.version)}
+            return {"version": f"{version.version}"}
 
-        def set_version(  # pyright: ignore [reportIncompatibleMethodOverride, reportImplicitOverride]
+        @typing.override
+        # enq: method name is required by hatchling's VersionSourceInterface
+        def set_version(  # noqa: PYNUDGER1
             self,
-            _: str,
-            __: dict[str, str],
-        ) -> typing.NoReturn:  # pragma: no cover
+            version: str,
+            version_data: dict[str, str],
+        ) -> None:
             """Setting the version is not supported by the comver plugin.
 
             This method exists to fulfill the interface, but always raises
             `NotImplementedError`.
 
             Args:
-                _:
+                version:
                     The version string (ignored).
-                __:
+                version_data:
                     Additional data (ignored).
 
             Raises:
@@ -224,7 +235,8 @@ if find_spec("hatchling"):
             raise NotImplementedError(error)
 
     @hookimpl
-    def hatch_register_version_source() -> type[ComverVersionSource]:
+    # enq: hook name is required by hatchling's plugin manager
+    def hatch_register_version_source() -> type[ComverVersionSource]:  # noqa: PYNUDGER19, PYNUDGER43
         """Automatically register hatchling plugin.
 
         Note:
@@ -236,6 +248,3 @@ if find_spec("hatchling"):
 
         """
         return ComverVersionSource
-
-else:  # pragma: no cover
-    pass

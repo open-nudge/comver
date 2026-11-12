@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -25,3 +25,6 @@ StringsOrPatterns = Iterable[StringOrPattern]
 
 OptionalStringsOrPatterns = Iterable[StringOrPattern] | None
 """Iterable of `StringOrPattern` or `None`."""
+
+OptionalPattern = re.Pattern[str] | None
+"""Compiled `re.Pattern` or `None`."""

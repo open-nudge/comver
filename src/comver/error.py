@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -6,6 +6,12 @@
 """Custom exceptions of `comver`."""
 
 from __future__ import annotations
+
+# enq: exception names follow the `*Error` convention of the public API
+# noqa-file: PYNUDGER18, PYNUDGER41, PYNUDGER43
+
+# enq: super().__init__ is the standard way of initializing exceptions
+# noqa-file: PYNUDGER29
 
 
 class ComverError(Exception):
@@ -25,9 +31,7 @@ class MessageUnrecognizedError(ComverError):
         """
         self.message: str = message
 
-        super().__init__(
-            f"Message '{message}' is not recognized by any of the provided regexes."
-        )
+        super().__init__(f"Message '{message}' is not recognized by any of the provided regexes.")
 
 
 class VersionFormatError(ComverError):

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -20,8 +20,11 @@ from comver._version import Version, VersionCommit
 if typing.TYPE_CHECKING:
     import argparse
 
+# enq: subcommands share names with their (separately tested) implementations
+# noqa-file: PYNUDGER43
 
-def calculate(args: argparse.Namespace) -> typing.NoReturn:
+
+def calculate(args: argparse.Namespace) -> int:
     """Calculate semantic versioning based on commit messages.
 
     Outputs version and (optionally) sha of a commit
@@ -34,12 +37,16 @@ def calculate(args: argparse.Namespace) -> typing.NoReturn:
         args:
             Arguments from the CLI.
 
+    Returns:
+        Exit code of the command (always `0`).
+
     """
+    # enq: printing the version is the purpose of this CLI subcommand
     print(_calculate(args))  # noqa: T201
-    sys.exit(0)
+    return 0
 
 
-def verify(args: argparse.Namespace) -> typing.NoReturn:
+def verify(args: argparse.Namespace) -> int:
     """Verify commit sha and inferred version match.
 
     Given `version` (as string, e.g. `1.2.3`) and
@@ -50,11 +57,14 @@ def verify(args: argparse.Namespace) -> typing.NoReturn:
         args:
             Arguments from the CLI.
 
+    Returns:
+        Exit code of the command (`1` on error, `0` on success).
+
     """
-    sys.exit(_verify(args))
+    return _verify(args)
 
 
-def _calculate(args: argparse.Namespace) -> str:  # noqa: C901
+def _calculate(args: argparse.Namespace) -> str:
     """Implementation of calculate cli command.
 
     Args:
@@ -67,33 +77,32 @@ def _calculate(args: argparse.Namespace) -> str:  # noqa: C901
         is optional based on `args.sha` flag.
 
     """
-    version = VersionCommit()
-    for version in Version.from_git_configured():  # noqa: B007
-        pass
+    last = VersionCommit()
+    for output in Version.from_git_configured():
+        last = output
 
-    sha = version.commit.hexsha if version.commit is not None else None
-    checksum = _checksum_config()
-
-    version = str(version.version)
+    fields = {
+        "version": f"{last.version}",
+        "sha": last.commit.hexsha if last.commit is not None else None,
+        "checksum": _checksum_config(),
+    }
+    requested = {"version": True, "sha": args.sha, "checksum": args.checksum}
 
     if args.format == "line":
-        if args.sha:
-            version = f"{version} {sha}"
-        if args.checksum:
-            version = f"{version} {checksum}"
-        return version
+        return " ".join(f"{value}" for key, value in fields.items() if requested[key])
 
-    output = {"version": str(version)}
-    if args.sha and isinstance(sha, str):
-        output["sha"] = sha
-    if args.checksum:
-        output["checksum"] = checksum
-
-    return json.dumps(output, indent=4)
+    return json.dumps(
+        {key: value for key, value in fields.items() if requested[key] and value is not None},
+        indent=4,
+    )
 
 
-def _verify(args: argparse.Namespace) -> bool:
+def _verify(args: argparse.Namespace) -> int:
     """Verify commit sha and inferred version match.
+
+    Multiple commits may share the same version (e.g. commits
+    excluded by their message), hence the commit with the specified
+    `sha` is searched for and its version is compared.
 
     Warning:
         This subcommand also outputs messages for the end user
@@ -103,46 +112,43 @@ def _verify(args: argparse.Namespace) -> bool:
             Arguments from the CLI.
 
     Returns:
-        Code status of the command (`True` for error, `False`
+        Code status of the command (`1` for error, `0`
         on successful verification).
 
     """
-    checksum = _checksum_config()
-
-    if args.checksum != checksum:
+    if args.checksum != _checksum_config():
+        # enq: user facing CLI error message
         print(  # noqa: T201
             "Provided checksum and the checksum of configuration do not match.",
             file=sys.stderr,
         )
-        return True
+        return 1
 
-    for output in Version.from_git_configured():
-        version, commit = output.version, output.commit
+    versions = {
+        output.commit.hexsha: f"{output.version}"
+        for output in Version.from_git_configured()
+        if output.commit is not None
+    }
+    version = versions.get(args.sha)
 
-        sha = commit.hexsha if commit is not None else None
+    if version is None:
+        # enq: user facing CLI error message
+        print(  # noqa: T201
+            f"Specified sha: `{args.sha}` (version: `{args.version}`) was not found in the git tree",
+            file=sys.stderr,
+        )
+        return 1
 
-        if args.version == version:
-            if sha is not None and sha == args.sha:
-                return False
+    if version != args.version:
+        # enq: user facing CLI error message
+        print(  # noqa: T201
+            f"Specified sha: `{args.sha}` corresponds to version: `{version}`, "
+            f"while expected version is: `{args.version}`",
+            file=sys.stderr,
+        )
+        return 1
 
-            print(  # noqa: T201
-                f"Specified version: `{args.version}` has sha: `{sha}`, while expected sha is: `{args.sha}`",
-                file=sys.stderr,
-            )  # pragma: no cover
-            return True  # pragma: no cover
-
-        if args.sha == sha:
-            print(  # noqa: T201
-                f"Specified sha: `{args.sha}` corresponds to version: `{version}`, while expected version is: `{args.version}`",  # noqa: E501
-                file=sys.stderr,
-            )
-            return True
-
-    print(  # noqa: T201
-        f"Neither specified sha: `{args.sha}` nor its corresponding version: `{args.version}` was found in the git tree",  # noqa: E501
-        file=sys.stderr,
-    )
-    return True
+    return 0
 
 
 def _checksum_config() -> str:

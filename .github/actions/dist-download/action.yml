@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: © 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "Dist Download"
+description: >
+  Download the distributions of this commit into ./dist and verify them
+  against the digests output by the release build job
+
+inputs:
+  digests:
+    description: >
+      sha256sum of the distributions (release build workflow output),
+      job outputs cannot be altered by other jobs, unlike artifacts
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Download distributions"
+      uses: "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333" # v8.0.2
+      with:
+        name: "dist-${{ github.sha }}"
+        path: "dist"
+    # Every downloaded file must be listed, so none can be added
+    - name: "Verify distributions"
+      # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+      # yamllint disable rule:line-length
+      # enq: temporary, opentemplate main commits are untagged (no release yet)
+      uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      # yamllint enable rule:line-length
+      with:
+        digests: "${{ inputs.digests }}"
+        directory: "dist"
+        exact: "true"
+...

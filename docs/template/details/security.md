@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -20,25 +20,30 @@ Key security checks include:
 - __Commit validation:__ Enforced signature and DCO sign-off
     ([`siderolabs/conform`](https://github.com/siderolabs/conform))
 
-- __Branch protection:__ No direct commits to `main`
-    ([`pre-commit/pre-commit-hooks`](https://github.com/pre-commit/pre-commit-hooks))
+- __Branch protection:__ No direct commits to `main` enforced locally by
+    [`prek` built-in `no-commit-to-branch` hook](https://prek.j178.dev/built-in-hooks/)
 
-- __Vulnerability scanning:__ [`google/osv-scanner`](https://github.com/google/osv-scanner)
+- __Vulnerability scanning:__ [`uv audit`](https://docs.astral.sh/uv/)
+    (all locked dependencies)
+
+- __Malicious dependencies detection:__ [`DataDog/guarddog`](https://github.com/DataDog/guarddog)
+    (runtime Python dependencies and GitHub Actions, CI only)
 
 - __Secret scanning:__ [`trufflesecurity/trufflehog`](https://github.com/trufflesecurity/trufflehog)
 
 - __Language-specific security checks:__
 
     - [`zizmor`](https://github.com/woodruffw/zizmor) for GitHub Actions security
+    - [CodeQL](https://codeql.github.com/) for GitHub Actions security (CI only)
     - [`semgrep/semgrep`](https://github.com/semgrep/semgrep) for Python/general
 
 - __Pinned dependencies:__ [OSSF Scorecard](https://github.com/ossf/scorecard/blob/main/docs/checks.md#pinned-dependencies)
 
 > [!IMPORTANT]
-> These checks run both locally (`pre-commit`) and in CI/CD.
+> These checks run both locally (`prek`) and in CI/CD.
 
 > [!TIP]
-> Configuration is primarily in `pyproject.toml` and `.pre-commit-config.yaml`,
+> Configuration is primarily in `pyproject.toml` and `prek.toml`,
 > with a few additional settings in `.github/workflows`.
 
 ## GitHub Actions
@@ -48,7 +53,6 @@ Key security checks include:
 
 Security measures:
 
-- __Automated dependency updates:__ [`renovatebot/renovate`](https://github.com/renovatebot/renovate)
 - __Minimal permissions__ for GitHub Actions
 - __Software Bill of Materials (SBOMs):__ Generated, stored, and attested in releases
 - __Reusable workflows__ for key tasks (e.g., `release`, `test`) to minimize
@@ -59,6 +63,19 @@ Security measures:
 
 > [!IMPORTANT]
 > Security checks (e.g., `scorecard`) run __weekly__.
+
+### SLSA
+
+[SLSA](https://slsa.dev/spec/v1.2/) status of the released distributions:
+
+- __Build track__: [L3](https://slsa.dev/spec/v1.2/build-requirements)
+    (L2 for `open-nudge/opentemplate` itself, as it relies on its own build).
+    Distributions are built and their provenance attested by reusable
+    workflows running no project code. `_release-vsa.yml` verifies the
+    provenance and attests the result as a
+    [Verification Summary Attestation](https://slsa.dev/spec/v1.2/verification_summary)
+    (VSA), bundled with the distributions in the release
+    (see [release process](../release-your-project/process.md#verifications)).
 
 ## Security documents
 
@@ -81,18 +98,202 @@ Following [Open Source Security Foundation best practices](https://www.bestpract
 ## Adjustments
 
 Most security configurations (e.g., `check-security`, `check-workflow`) are in `pyproject.toml`.
-Additional security workflows are in `.github/workflows` (prefix: `security-`).
+Additional security workflows are in `.github/workflows` (prefix: `security-`,
+reusable workflows additionally prefixed with `_`).
 
-### OSV Scanner
+### Security tab categories
 
-To ignore specific vulnerabilities, modify `osv-scanner.toml` ([docs](https://google.github.io/osv-scanner/configuration/)).
+Scanners do not upload results themselves (pull requests run without write
+permissions). Their SARIF files are uploaded by
+`.github/workflows/_security-upload.yml` on `main` (push and weekly)
+and during releases, one analysis per tool, categorized as
+`/tool:<tool>/scope:<scope>/language:<language>`:
+
+<!-- pyml disable-num-lines 13 line-length-->
+
+| Tool      | Category                                                   |
+| --------- | ---------------------------------------------------------- |
+| CodeQL    | `/tool:codeql/scope:workflows/language:actions`            |
+| zizmor    | `/tool:zizmor/scope:workflows/language:actions`            |
+| Semgrep   | `/tool:semgrep/scope:repository/language:all`              |
+| uv audit  | `/tool:uv-audit/scope:dependencies/language:python`        |
+| GuardDog  | `/tool:guarddog/scope:dependencies-<tier>/language:python` |
+| GuardDog  | `/tool:guarddog/scope:actions/language:actions`            |
+| Trivy     | `/tool:trivy/scope:sbom-<name>/language:python`            |
+| Trivy     | `/tool:trivy/scope:licenses-<name>/language:python`        |
+| Scorecard | `/tool:scorecard/scope:repository/language:all`            |
+
+> [!NOTE]
+> Analyses uploaded under other categories (e.g. by previous template
+> versions) are not replaced. Delete them under
+> __Security → Code scanning → Tool status__ so their alerts get closed.
+
+Analyses are kept per ref and category:
+
+- `main` (push and weekly) replaces the previous `main` analysis,
+    so the Security tab reflects the latest commit, not the latest release
+- releases upload against the tag (separate from `main`); the SARIF files
+    are also attested and attached to the GitHub release, describing
+    exactly the released commit
+- pull requests upload nothing, findings are listed in the job summary
+
+### uv audit
+
+`uv audit` checks `uv.lock` (all groups) against the [OSV database](https://osv.dev/)
+on every commit (`prek`) and in CI.
+Fixes arrive as Dependabot security updates, which (unlike version updates)
+are not delayed by the 7 day cooldown,
+see [`SECURITY-DEPENDENCY.md`](../../SECURITY-DEPENDENCY.md#vulnerabilities).
+To ignore specific vulnerabilities, add their IDs (any alias)
+with a reason to `[tool.uv.audit]` in `pyproject.toml`:
+
+- `ignore` - not applicable to the project
+- `ignore-until-fixed` - no fix released yet, reported again once it is
+
+### Trivy
+
+[Trivy](https://github.com/aquasecurity/trivy) scans the Python SBOMs
+(per tier, Python version and OS) for known vulnerabilities and the licenses
+of the distributed environments (`core` and `extras`) on pull requests
+(job summary only), weekly (`main` and the latest release)
+and before every release (`.github/workflows/_sbom.yml`)
+(latter two being uploaded to the security tab).
+Vulnerabilities are triaged in the Security tab, while licenses outside of
+the allowed ones fail the job (see [legal](legal.md#python-dependencies)).
+
+Configuration (allowed licenses) is stored in `.trivy.yaml`,
+triaged findings are ignored in `.trivyignore.yaml`. __Both files are required__,
+used by every scan, attested and attached to releases
+(`trivy-config-<commit SHA>.yaml`, `trivy-ignore-<commit SHA>.yaml`),
+so what the released scans ignore can be audited.
+
+Every run installs the newest Trivy release published __at least 7 days ago__
+(the Dependabot-like cooldown), so no manual updates are needed, while
+compromised releases (like [`v0.69.4`](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23),
+withdrawn after 3 hours) are not used.
+The version used is recorded in every SARIF (`tool.driver.version`),
+attested and released with the scans.
+The vulnerability database is downloaded on every run.
+
+> [!NOTE]
+> GitHub Actions are not scanned by Trivy (it does not match them),
+> their known vulnerabilities are reported by `zizmor`.
+
+### GuardDog
+
+[GuardDog](https://github.com/DataDog/guarddog) looks for malicious code
+(heuristics such as obfuscation, exfiltration or typosquatting) in Python
+dependencies and in the source of third-party actions used by
+`.github/workflows` steps (`.github/workflows/*security-guarddog*.yml`).
+Unlike `uv audit`, Trivy or `zizmor`, it does not rely on known advisories.
+GuardDog is installed (hash-locked) from the template's `dev-security` group.
+
+Python dependencies are scanned per tier (as SBOMs are):
+
+<!-- pyml disable-num-lines 8 line-length-->
+
+| Tier     | Dependencies                       | Scanned on                     |
+| -------- | ---------------------------------- | ------------------------------ |
+| `core`   | `--no-default-groups`              | releases                       |
+| `extras` | `--no-default-groups --all-extras` | pull requests, `main`, release |
+
+> [!NOTE]
+> Heuristics produce false positives, therefore findings do not fail the
+> check. Review them in the Security tab (dismissed alerts stay dismissed).
+> On pull requests findings are listed only in the job summary.
+
+> [!IMPORTANT]
+> Development dependencies are not scanned. GuardDog downloads every
+> package anew (roughly 1.5 seconds per package), the template's own
+> development dependencies (over 250 packages) take around 8 minutes.
+
+Excluded rules (`--exclude-rules` in the reusable workflow):
+
+- `capability-*` (Python dependencies only): describe normal behavior
+    (reading files, spawning processes, network access), around 90% of
+    findings for Python packages. Actions are scanned with all rules,
+    their capabilities (e.g. downloads, spawned processes) are few
+    and worth triaging in the Security tab
+- `repository_integrity_mismatch`: fully clones the GitHub repository of
+    every package (for 68 dependencies it took 10 minutes instead of 2,
+    a single repository took over 5 minutes), finding no issues in practice
 
 > [!WARNING]
-> License-related issues in __currently defined__ development dependencies
-> are ignored by default.
+> Maintainers' e-mail domains are checked with WHOIS (unclaimed or
+> re-registered domains indicate account takeover risk).
+> [`harden-runner`](https://github.com/step-security/harden-runner)
+> allows only the WHOIS servers of currently used top-level domains.
+> If the job warns about coverage and its log shows
+> `Error trying to connect to socket`, add the missing registry
+> (see its IANA entry) to the reusable workflow.
 
-> [!TIP]
-> `osv-scanner.toml` settings are respected by OSSF Scorecard.
+Known limitations (the job warns when something was not scanned):
+
+- GuardDog exits successfully even if a package could not be downloaded
+- actions referenced by a path inside a repository
+    (e.g. `github/codeql-action/init`) and `docker://` images are not scanned,
+    neither are actions used by composite actions in `.github/actions`
+- each action is scanned once per workflow using it, identical results
+    are deduplicated and alerts point to the first such workflow
+
+### CodeQL
+
+[CodeQL](https://codeql.github.com/) only analyzes GitHub Actions workflows
+(`.github/workflows/*security-codeql*.yml`).
+Pull requests fail on any finding, while results are uploaded to the
+Security tab on `main` (push and weekly) and attached to releases.
+
+> [!IMPORTANT]
+> Dismissing an alert in the Security tab does not affect the check,
+> the findings have to be fixed.
+
+> [!WARNING]
+> GitHub's CodeQL _default setup_ rejects uploads of the advanced setup.
+> `harden.yml` disables it (best effort), otherwise go to
+> __Settings → Advanced Security → CodeQL analysis → ⋯__
+> and choose __Disable CodeQL__ (or __Switch to advanced__).
+> If an organization security configuration enforces default setup,
+> an organization owner has to change it.
+
+> [!NOTE]
+> Advanced setup needs no switch, the first upload enables code scanning
+> for public repositories. Private repositories need
+> GitHub Code Security, see
+> [Without GitHub Code Security](#without-github-code-security).
+
+### zizmor
+
+[zizmor](https://github.com/zizmorcore/zizmor) audits GitHub Actions
+workflows (`check-github` in `pyproject.toml`) on pull requests, on `main`
+(push and weekly) and during releases.
+
+> [!IMPORTANT]
+> Outside of pull requests zizmor is installed from `open-nudge/opentemplate`
+> (`dev-security` group) and ignores zizmor configuration files
+> (`--no-config`), so the attested results cannot be altered by the project.
+> Use inline `# zizmor: ignore[<audit>]` comments instead.
+
+### Without GitHub Code Security
+
+Private repositories need
+[GitHub Code Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security)
+(formerly part of GitHub Advanced Security) for the Security tab.
+Without it set the `NO_GITHUB_CODE_SECURITY` configuration variable
+(repository or organization) to any value, e.g. `true`, which:
+
+- skips CodeQL (the required check passes as skipped), as its
+    [license](https://securitylab.github.com/tools/codeql/license/)
+    does not allow analyzing private code without GitHub Code Security
+- skips uploads to the Security tab, findings are listed in the job
+    summary of each scanner instead (checks still fail on findings)
+
+> [!NOTE]
+> SARIFs are still produced and attached to releases. Their attestation
+> depends only on `NO_GITHUB_ENTERPRISE_CLOUD`
+> (see [release process](../release-your-project/process.md)).
+
+> [!CAUTION]
+> __This escape hatch is ignored for public and internal repositories!__
 
 ### Conform
 
@@ -103,4 +304,3 @@ DCO sign-off and GPG signatures. Modify `.conform.yml` to adjust checks.
 
 - [Threat Modeling Manifesto](https://www.threatmodelingmanifesto.org/)
 - [CNCF Tag Security](https://tag-security.cncf.io/)
-- [AppSec Tools](https://www.jit.io/resources/appsec-tools)

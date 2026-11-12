@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -9,7 +9,11 @@ SPDX-License-Identifier: Apache-2.0
 
 <!-- mkdocs remove start -->
 
+<!-- enq: concise banner copy and link labels intentionally bypass prose rules -->
+
 <!-- vale off -->
+
+<!-- enq: badge markup contains generated URLs that cannot fit the line limit -->
 
 <!-- pyml disable-num-lines 30 line-length-->
 
@@ -40,6 +44,7 @@ SPDX-License-Identifier: Apache-2.0
 👍 <a href="https://github.com/open-nudge/comver/blob/main/ADOPTERS.md">Adopters</a>
 📜 <a href="#legal">Legal</a>
 </p>
+<!-- enq: prose checking resumes after the intentionally concise banner -->
 <!-- vale on -->
 
 ______________________________________________________________________
@@ -74,7 +79,7 @@ Semantic versioning based on Git tags has a few limitations:
     one version for technical changes, another for public releases is
     a viable mitigation.
 - Tag creation by `bot`s (e.g. during automated releases) lead to problems
-    with `branch protection` (see [here](https://github.com/orgs/community/discussions/25305)).
+    with `branch protection` (see [this discussion](https://github.com/orgs/community/discussions/25305)).
 - Not all commits are relevant for release versions
     (e.g., CI changes, bot updates, or tooling config),
     yet many schemes count them in. With filtering, `comver` can exclude
@@ -90,6 +95,13 @@ Semantic versioning based on Git tags has a few limitations:
 > [tutorials](https://open-nudge.github.io/comver/tutorials).
 
 ### Installation
+
+> [!TIP]
+> You can use your favorite package manager like
+> [`uv`](https://github.com/astral-sh/uv),
+> [`hatch`](https://github.com/pypa/hatch)
+> or [`pdm`](https://github.com/pdm-project/pdm)
+> instead of `pip`.
 
 ```sh
 > pip install comver
@@ -143,9 +155,9 @@ path_includes = [
   "pyproject.toml",
 ]
 
-# Commits done by GitHub Actions bot are discarded
+# Commits done by bots are discarded
 author_name_excludes = [
-  "github-actions[bot]",
+  '.*\[bot\].*',
 ]
 ```
 
@@ -161,8 +173,8 @@ path_includes = [
 
 # Commits messages with [no version] are discarded
 message_excludes = [
-  ".*\[no version\].*",
-  ".*\[skipversion\].*",
+  '.*\[no version\].*',
+  '.*\[skip version\].*',
 ]
 ```
 
@@ -171,7 +183,7 @@ message_excludes = [
 </table>
 
 > [!TIP]
-> See suggested configuration examples [here](https://open-nudge.github.io/comver/tutorials/configuration)
+> See [suggested configuration examples](https://open-nudge.github.io/comver/tutorials/configuration)
 
 ### Integrations
 
@@ -199,7 +211,7 @@ build-backend = "pdm.backend"
 
 requires = [
   "pdm-backend",
-  "comver>=0.1.0",
+  "comver>=2",
 ]
 
 # Setup versioning for PDM
@@ -221,14 +233,13 @@ getter = "comver.plugin:pdm"
 build-backend = "hatchling.build"
 
 requires = [
-  "comver>=0.1.0",
   "hatchling",
+  "comver[hatchling]>=2",
 ]
 
 # Setup versioning for Hatchling
 [tool.hatch.version]
 source = "comver"
-
 
 # Comver-specific settings
 [tool.comver]
@@ -275,8 +286,6 @@ If inconsistencies are found, you'll receive feedback, for example:
 > [!TIP]
 > Explore verification workflows in the [tutorials](https://open-nudge.github.io/comver/tutorials/verification)
 
-<!-- md-dead-link-check: off -->
-
 ## Contribute
 
 We welcome your contributions! Start here:
@@ -291,10 +300,8 @@ We welcome your contributions! Start here:
 ## Legal
 
 - This project is licensed under the _Apache 2.0 License_ - see
-    the [LICENSE](/LICENSE.md) file for details.
+    the [LICENSE](/LICENSE) file for details.
 - This project is copyrighted by _open-nudge_ - the
     appropriate copyright notice is included in each file.
 
 <!-- mkdocs remove end -->
-
-<!-- md-dead-link-check: on -->

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -25,7 +25,7 @@ path_includes = [
 
 # Commits done by GitHub Actions bot are discarded
 author_name_excludes = [
-  "github-actions[bot]",
+  'github-actions\[bot\]',
 ]
 ```
 
@@ -41,7 +41,7 @@ path_includes = [
 
 # Commits done by GitHub Actions bot are discarded
 author_name_excludes = [
-  "github-actions[bot]",
+  'github-actions\[bot\]',
 ]
 ```
 
@@ -49,8 +49,10 @@ author_name_excludes = [
 
 > [!WARNING]
 > All includes and excludes accept regex lists,
-> evaluated using Python's [`re.match`](https://docs.python.org/3/library/re.html#re.match)
+> evaluated using Python's [`re.search`](https://docs.python.org/3/library/re.html#re.search)
 > (they are interpreted as raw strings, i.e., prefixed with `r`).
+> Use TOML literal strings (single quotes) for patterns
+> containing backslashes, e.g. `'\[bot\]'`.
 
 > [!WARNING]
 > `excludes` always take precedence over `includes`
@@ -134,8 +136,8 @@ To ignore commits made by bots (e.g. GitHub Actions or [`renovatebot`](https://g
 
 ```toml
 [tool.comver]
-author_excludes = [
-  ".*\[bot\].*",
+author_name_excludes = [
+  '.*\[bot\].*',
 ]
 ```
 
@@ -145,7 +147,7 @@ author_excludes = [
 
 ## Github-style commit skips
 
-GitHub allows skipping [skipping CI workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)
+GitHub allows [skipping CI workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)
 with commit annotations like [skip ci].
 
 Similarly, comver supports skipping version bumps via:
@@ -153,8 +155,8 @@ Similarly, comver supports skipping version bumps via:
 ```toml
 [tool.comver]
 message_excludes = [
-  ".*\[no version\].*",
-  ".*\[skip version\].*",
-  ".*\[version skip\].*",
+  '.*\[no version\].*',
+  '.*\[skip version\].*',
+  '.*\[version skip\].*',
 ]
 ```

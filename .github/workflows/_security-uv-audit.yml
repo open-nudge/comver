@@ -1,0 +1,104 @@
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# enq: reusable workflows offload concurrency limits to the caller
+name: "_Security uv audit"  # zizmor: ignore[concurrency-limits]
+
+on:
+  workflow_call:
+    outputs:
+      digests:
+        description: "sha256sum of the SARIF file (named as in the artifact)"
+        value: "${{ jobs._security-uv-audit.outputs.digests }}"
+    inputs:
+      name:
+        description: >
+          Name of the artifact and its SARIF file (<name>.sarif),
+          default: '' - no artifact upload
+        type: "string"
+        default: ""
+      ref:
+        description: "The ref to checkout (default: '' - the triggering ref)"
+        type: "string"
+        default: ""
+      continue-on-error:
+        description: "Whether to continue on error"
+        type: "boolean"
+        default: false
+
+# enq: the only way to set permissions to none in GH Actions
+permissions: {} # yamllint disable-line rule:braces
+
+defaults:
+  run:
+    shell: "bash"
+
+jobs:
+  _security-uv-audit:
+    name: "_Security uv audit"
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 30
+    permissions:
+      contents: "read"
+    outputs:
+      digests: "${{ steps.upload.outputs.digests }}"
+    env:
+      FILE: "${{ inputs.name || 'uv-audit' }}.sarif"
+    steps:
+
+      - name: "Harden Runner"
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        with:
+          disable-sudo-and-containers: true
+          egress-policy: "block"
+          allowed-endpoints: >
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+            api.osv.dev:443
+            codeload.github.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            releases.astral.sh:443
+            results-receiver.actions.githubusercontent.com:443
+      - name: "Checkout source"
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
+        with:
+          ref: "${{ inputs.ref }}"
+          path: "source"
+          persist-credentials: false
+      # Hash-locked uv from the template, the caller cannot alter it
+      - name: "Setup uv"
+        # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+        # yamllint disable rule:line-length
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/setup-release@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        # yamllint enable rule:line-length
+        with:
+          group: "dev-bootstrap"
+      # Ignores are read from [tool.uv.audit] of the source project
+      - name: "Run audit"
+        continue-on-error: "${{ inputs.continue-on-error }}"
+        run: >
+          uv audit --project source --frozen --preview-features audit-command
+          --output-format sarif > "${FILE}"
+      - name: "Upload files"
+        id: "upload"
+        if: >
+          !cancelled()
+        # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+        # yamllint disable rule:line-length
+        # enq: temporary, opentemplate main commits are untagged (no release yet)
+        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        # yamllint enable rule:line-length
+        with:
+          name: "${{ inputs.name }}"
+          file: "${{ env.FILE }}"
+...

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: © 2025 nosludge <https://github.com/nosludge>
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -8,29 +8,19 @@
 
 from __future__ import annotations
 
-import re
 import typing
 
 from comver._regex._process import process
 
 if typing.TYPE_CHECKING:
-    from comver.type_definitions import OptionalStringsOrPatterns
-
-Key = typing.TypeVar("Key")
-
-Semantic = tuple[Key, re.Pattern[str] | None]
-Major = Semantic[typing.Literal["major"]]
-Minor = Semantic[typing.Literal["minor"]]
-Patch = Semantic[typing.Literal["patch"]]
-
-StringOrPattern = str | re.Pattern[str]
+    from comver.type_definitions import OptionalPattern, OptionalStringsOrPatterns
 
 
 def components(
     major_regexes: OptionalStringsOrPatterns,
     minor_regexes: OptionalStringsOrPatterns,
     patch_regexes: OptionalStringsOrPatterns,
-) -> tuple[Major, Minor, Patch]:
+) -> tuple[OptionalPattern, OptionalPattern, OptionalPattern]:
     """Grouped semantic versioning regexes.
 
     This allows iteration over all necessary components
@@ -45,17 +35,13 @@ def components(
             The regexes finding the `patch` version.
 
     Returns:
-        Dictionary mapping element of semantic versioning to the regex.
+        `major`, `minor` and `patch` regexes (in this order).
 
     """
-    return (
-        ("major", major(major_regexes)),
-        ("minor", minor(minor_regexes)),
-        ("patch", patch(patch_regexes)),
-    )
+    return major(major_regexes), minor(minor_regexes), patch(patch_regexes)
 
 
-def major(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
+def major(regexes: OptionalStringsOrPatterns) -> OptionalPattern:
     """Return compiled `major` regex.
 
     Args:
@@ -69,8 +55,8 @@ def major(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
     return process(regexes, r".*BREAKING CHANGE.*|^(feat|fix)(\(.*?\))?!: .*")
 
 
-def minor(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
-    """Return compiled `mior` regex.
+def minor(regexes: OptionalStringsOrPatterns) -> OptionalPattern:
+    """Return compiled `minor` regex.
 
     Args:
         regexes:
@@ -83,7 +69,7 @@ def minor(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
     return process(regexes, "^feat(\\(.*?\\))?: .*")
 
 
-def patch(regexes: OptionalStringsOrPatterns) -> re.Pattern[str] | None:
+def patch(regexes: OptionalStringsOrPatterns) -> OptionalPattern:
     """Return compiled `patch` regex.
 
     Args:

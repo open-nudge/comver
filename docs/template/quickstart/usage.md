@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -16,11 +16,12 @@ SPDX-License-Identifier: Apache-2.0
 
 1. Create an issue for the task.
 1. Create a new branch (`<issue-number>` or similar).
-1. (Optional) Add dependencies to `pyproject.toml`.
+1. (Optional) Adjust package metadata in `[project]` in `pyproject.toml`,
+    `prek` locks and upgrades dependencies (at least a week old) on every commit.
 1. Write code in `/src/<project_name>` and tests in `/tests`.
 1. Use `git add`, `git commit` (following [semver](https://semver.org/)),
     and `git push`.
-1. __`pre-commit` will guide you through the process.__
+1. __`prek` will guide you through the process.__
 1. Create a pull request (following [semver](https://semver.org/)).
 1. Wait for CI checks and code review approval.
 
@@ -56,8 +57,15 @@ Place project source code in `src/<project_name>` or at least
 Some exceptions apply (e.g., `Dockerfile`, `Makefile`).
 
 > [!NOTE]
-> Before every commit and push `pre-commit` will run checks
+> Before every commit and push `prek` will run checks
 > ensuring code quality and style.
+
+### Project metadata
+
+Package metadata is declared in `[project]` in \`pyproject.toml).
+
+Add runtime dependencies to`[project].dependencies`,
+keywords to`[project].keywords`, and classifiers to`[project].classifiers`.
 
 ### Tests
 
@@ -105,7 +113,8 @@ may be required (as defined during [installation](installation.md)).
 ## Code sources
 
 - `pyproject.toml`
-- `.pre-commit-config.yaml`
-- `.github/pr-labeler.yml`
-- `/.github/workflows/template_setup.yml`
-- `.github/workflows/python-tests.yml`
+- `project/`
+- `prek.toml`
+- `.github/label-path.yml`
+- `/.github/workflows/template-setup.yml`
+- `.github/workflows/tests.yml`

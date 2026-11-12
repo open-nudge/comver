@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -20,12 +20,14 @@ The following tools ensure consistency and quality:
 - __Formatting:__ [`mdformat`](https://github.com/hukkin/mdformat)
 - __Linting:__ [`pymarkdownlnt`](https://github.com/jackdewinter/pymarkdown)
     (similar to [`markdownlint`](https://github.com/DavidAnson/markdownlint))
-- __Dead link checking:__ [`md-dead-link-check`](https://github.com/AlexanderDokuchaev/md-dead-link-check)
+- __Dead link checking:__ [`lychee`](https://github.com/lycheeverse/lychee)
+    (`prek` only, skipped in GitHub Actions as hosts often block CI runners,
+    configured in `lychee.toml`)
 
 ### `vale`
 
 [`vale`](https://github.com/errata-ai/vale) checks writing style and grammar.
-`pre-commit` and GitHub Actions run it on any text files
+`prek` and GitHub Actions run it on any text files
 (__internet access is required__).
 
 > [!TIP]
@@ -48,5 +50,5 @@ The following tools ensure consistency and quality:
 ## Code Sources
 
 - `pyproject.toml`
-- `.pre-commit-config.yaml`
+- `prek.toml`
 - `.github/workflows/prose.yml`

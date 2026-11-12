@@ -6,7 +6,7 @@
 ---
 cff-version: "1.2.0"
 abstract: >-
-  Commit-based semantic versioning — verifiable, immutable, and tag-free.
+  Commit-based semantic versioning - highly configurable and tag-free.
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: "open-nudge"

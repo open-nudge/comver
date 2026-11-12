@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -28,20 +28,20 @@ SPDX-License-Identifier: Apache-2.0
 > [!CAUTION]
 > Review [README](../../index.md) after changes to ensure coherence.
 
-## pyproject.toml
+## Project metadata
 
-> [!CAUTION]
-> Do not edit sections starting with `DO NOT EDIT UNTIL end marker`
-> and ending with `[[[end]]]`.
-
-- `[project.classifiers]` – Add relevant
+- `[project].classifiers` – Add relevant
     [PyPI classifiers](https://pypi.org/classifiers/).
-- `[project.dependencies]` and `[project.optional-dependencies]` – Double-check
-    correctness.
+- `[project].keywords` – Confirm package keywords.
+- `[project].dependencies` and `[project].optional-dependencies` –
+    Double-check runtime dependencies and version constraints.
+- `[project].scripts`, `[project].gui-scripts`, and
+    `[project].entry-points` – Confirm command and entry-point metadata.
+- For dependencies, review `uv.lock` (upgraded by `prek` on every commit).
 
 > [!TIP]
-> For public projects after the first release, remove `exclude_links`
-> in `[tool.md_dead_link_check]` to validate all links.
+> For public projects after the first release, remove the repository
+> and documentation entries of `exclude` in `lychee.toml` to validate all links.
 
 ## Documentation
 

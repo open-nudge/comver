@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -13,8 +13,15 @@ on:
   merge_group:
     types:
       - "checks_requested"
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
 
+# enq: the only way to set permissions to none in GH Actions
 permissions: {} # yamllint disable-line rule:braces
+
+cache-mode: "read"
 
 concurrency:
   group: >
@@ -24,15 +31,34 @@ concurrency:
 jobs:
   security-semgrep:
     permissions:
-      # Required to upload SARIF file to CodeQL.
-      # See: https://github.com/github/codeql-action/issues/2117
-      actions: "read"
-      # Require writing security events to upload SARIF file to security tab
-      security-events: "write"
-      # Only need to read contents
       contents: "read"
     name: "Security Semgrep"
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/security-semgrep-reusable.yml@main" # zizmor: ignore[unpinned-uses]
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-semgrep.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
+    with:
+      name: "semgrep"
+
+  # Separate job, so PRs (which do not upload) run without write permissions
+  security-semgrep-upload:
+    name: "Security Semgrep Upload"
+    needs: "security-semgrep"
+    # Also on failure, so findings reach the Security tab
+    if: >
+      !cancelled()
+      && github.event_name != 'pull_request'
+      && github.event_name != 'merge_group'
+    permissions:
+      actions: "read" # https://github.com/github/codeql-action/issues/2117
+      security-events: "write" # Needed to upload SARIF file to tab
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
+    # yamllint disable rule:line-length
+    # enq: temporary, opentemplate main commits are untagged (no release yet)
+    uses: "open-nudge/opentemplate/.github/workflows/_security-upload.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+    # yamllint enable rule:line-length
+    with:
+      name: "semgrep"
+      category: "/tool:semgrep/scope:repository/language:all"
 ...

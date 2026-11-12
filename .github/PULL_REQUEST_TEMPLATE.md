@@ -1,21 +1,27 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-<!--- pyml disable-next-line first-line-heading,first-line-h1-->
+<!--- pyml disable-next-line first-line-heading,first-line-h1 -->
 
 ## Checklist
 
-- [ ] I agree to follow this project's [Code of Conduct](https://github.com/open-nudge/comver/blob/main/CODE_OF_CONDUCT.md)
-- [ ] I have read this project's [Contributing Guide](https://github.com/open-nudge/comver/blob/main/CONTRIBUTING.md)
-- [ ] I have created relevant issue(s) and linked them in the PR description
+- [] I agree to follow this project's [Code of Conduct](https://github.com/open-nudge/comver/blob/main/CODE_OF_CONDUCT.md)
+- [] I have read this project's [Contributing Guide](https://github.com/open-nudge/comver/blob/main/CONTRIBUTING.md)
+- [] I have created relevant issue(s) and linked them in the PR description
+
+<!-- Issue number this PR resolves -->
 
 > Closes #
 
-## Additional information
+<!-- ## Additional information -->
 
-Provide any additional information that may be relevant and
-was not covered by the issue description (mainly technical) below:
+<!--
+Provide any additional information that may be relevant and was
+not covered by the issue description.
+
+Usually you would include technical details, implementation choices and so on.
+-->
