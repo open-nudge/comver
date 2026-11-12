@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: © 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "Setup Release"
+description: >
+  Install release tooling from the pinned reusable base workflow repository
+  into ./template, so the calling repository cannot alter how releases are built
+
+inputs:
+  group:
+    description: "Dependency group to install for release tooling"
+    default: "dev-release"
+  python-version:
+    description: "Python version used by uv and the template tools"
+    #
+    #           DO NOT EDIT UNTIL end marker
+    #
+    # [[[cog
+    # import cog
+    # import cogeol
+    #
+    # cycle = cogeol.scientific()[-1]["cycle"]
+    # cog.out(f'    default: "{cycle}"')
+    # ]]]
+    default: "3.13"
+    # [[[end]]] (sum: +w2vr+7KUV)
+  sparse-checkout:
+    description: >
+      Additional paths (newline separated) of the template repository
+      to checkout besides pyproject.toml and uv.lock
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    # Empty identity would silently checkout the caller as the template
+    - name: "Verify template identity"
+      shell: "bash"
+      env:
+        TEMPLATE_REPOSITORY: "${{ job.workflow_repository }}"
+        TEMPLATE_SHA: "${{ job.workflow_sha }}"
+      # enq: shell indentation is more readable
+      # yamllint disable rule:indentation
+      run: |
+        if [[ -z "${TEMPLATE_REPOSITORY}" || -z "${TEMPLATE_SHA}" ]]; then
+          echo "::error title=Unknown template::Cannot resolve template workflow identity"
+          exit 1
+        fi
+      # yamllint enable rule:indentation
+    - name: "Checkout template repository"
+      uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
+      with:
+        repository: "${{ job.workflow_repository }}"
+        ref: "${{ job.workflow_sha }}"
+        path: "template"
+        sparse-checkout: |
+          /pyproject.toml
+          /uv.lock
+          ${{ inputs.sparse-checkout }}
+        sparse-checkout-cone-mode: false
+        # All blobs in the retried fetch, not lazily during checkout
+        # https://github.com/actions/checkout/issues/2597
+        filter: "blob:limit=1g"
+        persist-credentials: false
+    - name: "Setup Python"
+      uses: "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0" # v7.1.0
+      with:
+        python-version: "${{ inputs.python-version }}"
+    # Version from the template's uv.lock, checksum verified by setup-uv
+    - name: "Install uv"
+      uses: "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2" # v10.3.3
+      with:
+        version-file: "template/uv.lock"
+        # The caller must not influence release tooling via caches
+        enable-cache: false
+    - name: "Install template release tools"
+      shell: "bash"
+      env:
+        GROUP: "${{ inputs.group }}"
+        PYTHON_VERSION: "${{ inputs.python-version }}"
+      run: >
+        uv sync --project template --locked --python "${PYTHON_VERSION}"
+        --only-group dev-tasks --only-group "${GROUP}" --no-editable
+    # Subsequent `uv run` calls must not alter the installed environments
+    - name: "Disable automatic uv sync"
+      shell: "bash"
+      run: >
+        echo "UV_NO_SYNC=true" >> "${GITHUB_ENV}"
+...

@@ -1,9 +1,7 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
-
-# pyright: reportUnusedCallResult=false
 
 """Test `comver.plugin` module tests."""
 
@@ -24,11 +22,21 @@ from hypothesis import strategies as st
 
 import comver
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+
+# enq: pytest requires the test_ prefix, which pynudger counts as a shared word
+# noqa-file: PYNUDGER43
+
+Strings = tuple[str, ...]
+"""Regexes passed as parameters."""
+
+CommitTypes = list[str]
+"""Types of the consecutive commits."""
+
 
 @st.composite
-def repository(
-    draw: st.DrawFn, *, n_commits: int = 10
-) -> tuple[str, comver.Version]:
+def repository(draw: st.DrawFn, *, n_commits: int = 10) -> tuple[str, CommitTypes]:
     """Create repository with `n_commits` commits.
 
     Commits will have the same text, but different scope,
@@ -41,41 +49,30 @@ def repository(
             Number of commits to create.
 
     Returns:
-        Repository with `n_commits` commits.
+        Path to the repository and types of its consecutive commits.
     """
     directory = pathlib.Path(tempfile.mkdtemp())
     repo = git.Repo.init(directory)
     file = directory / "file.txt"
 
-    version = pytest.ComverVersionTester()  # pyright: ignore [reportAttributeAccessIssue]
-
+    commit_types: list[str] = []
     for _ in range(n_commits):
         commit_type = draw(st.sampled_from(["fix", "feat", "feat!", "fix!"]))
         author = draw(st.sampled_from(["Alice", "Bob"]))
         email = draw(st.sampled_from(["alice@example.com", "bob@example.com"]))
 
-        with file.open("w") as f:
-            f.write(str(uuid.uuid4()))
-
-        repo.index.add(file)
-        repo.index.commit(
+        _ = file.write_text(f"{uuid.uuid4()}")
+        _ = repo.index.add(file)
+        _ = repo.index.commit(
             f"{commit_type}: bla bla bla [no version]",
             author=git.Actor(author, email),
         )
+        commit_types.append(commit_type)
 
-        version.bump(commit_type)
-
-    if repo.working_tree_dir is not None:
-        return str(repo.working_tree_dir), comver.Version(*version.to_tuple())  # pyright: ignore [reportUnknownArgumentType]
-    return (
-        "",
-        comver.Version(
-            *version.to_tuple()  # pragma: no cover  # pyright: ignore [reportUnknownArgumentType]
-        ),
-    )
+    return f"{directory}", commit_types
 
 
-def _hatchling(repository: str, **kwargs: dict[str, list[str] | None]) -> str:
+def _hatchling(*, repository: str, **kwargs: Strings | None) -> str:
     """Dummy function unifying `hatchling` plugin interface with `pdm`.
 
     This allows for later usage in `pytest.mark.parametrize` in `test_plugin`
@@ -93,9 +90,7 @@ def _hatchling(repository: str, **kwargs: dict[str, list[str] | None]) -> str:
         Version as string
 
     """
-    return comver.plugin.ComverVersionSource(
-        root=repository, config=kwargs
-    ).get_version_data()["version"]
+    return comver.plugin.ComverVersionSource(root=repository, config=kwargs).get_version_data()["version"]
 
 
 @pytest.mark.parametrize("plugin", (comver.plugin.pdm, _hatchling))
@@ -108,63 +103,60 @@ def _hatchling(repository: str, **kwargs: dict[str, list[str] | None]) -> str:
 @pytest.mark.parametrize("author_email_includes", (None, (".*@example.com",)))
 @pytest.mark.parametrize("author_email_excludes", (None, (".*@example.com",)))
 @settings(max_examples=2)
-@given(repository_test_version=repository())
+@given(repository_commits=repository())
+# enq: every comver filter is tested as a separate parameter
 def test_plugin(  # noqa: PLR0913
-    plugin: typing.Callable[..., str],  # Takes all arguments below
-    message_includes: tuple[str, ...] | None,
-    message_excludes: tuple[str, ...] | None,
-    path_includes: tuple[str, ...] | None,
-    path_excludes: tuple[str, ...] | None,
-    author_name_includes: tuple[str, ...] | None,
-    author_name_excludes: tuple[str, ...] | None,
-    author_email_includes: tuple[str, ...] | None,
-    author_email_excludes: tuple[str, ...] | None,
-    repository_test_version: tuple[str, comver.Version],
+    *,
+    expected: Callable[..., comver.Version],
+    plugin: Callable[..., str],
+    message_includes: Strings | None,
+    message_excludes: Strings | None,
+    path_includes: Strings | None,
+    path_excludes: Strings | None,
+    author_name_includes: Strings | None,
+    author_name_excludes: Strings | None,
+    author_email_includes: Strings | None,
+    author_email_excludes: Strings | None,
+    repository_commits: tuple[str, CommitTypes],
 ) -> None:
-    """Test `comver.plugin.pdm` function.
+    """Test `comver.plugin.pdm` function and `hatchling` plugin.
 
-    Tests if `comver.plugin.pdm.git` function returns
-    correct version and whether regular expression based filtering works.
+    Tests if plugins return correct version
+    and whether regular expression based filtering works.
 
     See `comver.plugin.pdm` docs for more details.
 
     Args:
+        expected:
+            Expected version calculator (independent of `comver`).
         plugin:
             Plugin function
         message_includes:
             Commit message regexes against which the commit is included.
-            Default: From config OR all paths are included.
         message_excludes:
             Commit message regexes against which the commit is excluded.
-            Default: From config OR no paths are excluded.
         path_includes:
             Path regexes against which the commit is included.
-            Default: From config OR all paths are included.
         path_excludes:
             Path regexes against which the commit is excluded.
-            Default: From config OR no paths are excluded.
         author_name_includes:
             Commit author names regexes against
             which the commit is included.
-            Default: From config OR all names are included.
         author_name_excludes:
             Commit author names regexes against
             which the commit is excluded.
-            Default: From config OR no names are excluded.
         author_email_includes:
             Commit author email regexes against
             which the commit is included.
-            Default: From config OR all emails are included.
         author_email_excludes:
             Commit author email regexes against
             which the commit is excluded.
-            Default: From config OR no emails are excluded.
-        repository_test_version:
-            Path to repository and its corresponding version.
+        repository_commits:
+            Path to repository and types of its consecutive commits.
 
     """
-    repository, test_version = repository_test_version
-    comver_version = plugin(
+    repository, commit_types = repository_commits
+    version = plugin(
         message_includes=message_includes,
         message_excludes=message_excludes,
         path_includes=path_includes,
@@ -175,19 +167,29 @@ def test_plugin(  # noqa: PLR0913
         author_email_excludes=author_email_excludes,
         repository=repository,
     )
+    shutil.rmtree(repository)
 
     # Every commit changes the same file, hence path_excludes excludes them all
-    if (
-        author_name_excludes
-        or author_email_excludes
-        or message_excludes
-        or path_excludes
-    ):
-        assert comver_version == "0.0.0"
-    else:
-        assert comver_version == test_version
+    excluded = author_name_excludes or author_email_excludes or message_excludes or path_excludes
+    assert version == f"{comver.Version() if excluded else expected(commit_types)}"
 
-    shutil.rmtree(repository)
+
+@pytest.mark.parametrize("plugin", (comver.plugin.pdm, _hatchling))
+def test_regexes(tmp_path: pathlib.Path, plugin: Callable[..., str]) -> None:
+    """Plugins pass version bump regexes to `comver`.
+
+    Args:
+        tmp_path:
+            Temporary directory where the repository is created.
+        plugin:
+            Plugin function
+
+    """
+    repo = git.Repo.init(tmp_path)
+    for message in ("docs: add readme", "chore: update tooling"):
+        _ = repo.index.commit(message)
+
+    assert plugin(major_regexes=(".*",), repository=f"{tmp_path}") == "2.0.0"
 
 
 def test_smoke_pdm() -> None:
@@ -201,12 +203,22 @@ def test_smoke_pdm() -> None:
     errors.
 
     """
-    comver.plugin.pdm()
+    _ = comver.plugin.pdm()
 
 
 def test_smoke_hatchling() -> None:
     """Smoke test `comver.plugin.ComverVersionSource` hook."""
-    assert (
-        comver.plugin.ComverVersionSource
-        == comver.plugin.hatch_register_version_source()
-    )
+    assert comver.plugin.ComverVersionSource == comver.plugin.hatch_register_version_source()
+
+
+def test_set_version(tmp_path: pathlib.Path) -> None:
+    """Setting the version via `hatchling` plugin is not supported.
+
+    Args:
+        tmp_path:
+            Temporary directory used as project's root.
+
+    """
+    source = comver.plugin.ComverVersionSource(root=f"{tmp_path}", config={})
+    with pytest.raises(NotImplementedError):
+        source.set_version("1.0.0", {})

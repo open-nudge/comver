@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -7,27 +7,34 @@
 name: "Security Scorecard Update"
 
 on:
+  push:
+    branches:
+      - "main"
   schedule:
     - cron: "0 3 * * 6"
   workflow_dispatch:
 
+# enq: the only way to set permissions to none in GH Actions
 permissions: {} # yamllint disable-line rule:braces
+
+cache-mode: "read"
+
+concurrency:
+  group: >
+    ${{ github.workflow_ref }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   security-scorecard-update:
     permissions:
-      # Required to upload SARIF file to CodeQL.
-      # See: https://github.com/github/codeql-action/issues/2117
-      actions: "read"
-      # Require writing security events to upload SARIF file to security tab
-      security-events: "write"
-      # Only need to read contents
+      actions: "read" # https://github.com/github/codeql-action/issues/2117
+      security-events: "write" # Needed to upload SARIF file to tab
+      id-token: "write" # Needed for GitHub OIDC token if publish_results
       contents: "read"
-      # Needed for GitHub OIDC token if publish_results is true
-      id-token: "write"
     name: "Security Scorecard Update"
+    # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
-    uses: "open-nudge/opentemplate/.github/workflows/security-scorecard-reusable.yml@main" # zizmor: ignore[unpinned-uses]
+    uses: "open-nudge/opentemplate/.github/workflows/_security-scorecard.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3"
     # yamllint enable rule:line-length
     with:
       sarif: true

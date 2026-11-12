@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -34,7 +34,7 @@ when consuming third-party packages:
     well-maintained and has a good reputation).
 - Avoid using third-party packages with known security vulnerabilities.
 - Before sending changes with new dependencies, make sure all automated
-    tests pass (`pre-commit` checks and continuous integration pipelines)
+    tests pass (`prek` checks and continuous integration pipelines)
 
 ### Versioning
 
@@ -47,6 +47,12 @@ when consuming third-party packages:
 - Specify `major`, `minor`, and `patch` versions for all pre-release
     third-party packages (version `0.x.y`).
 - Use the latest `major` version of all third-party packages whenever possible.
+- Tools outside of the lock file follow the same 7 day cooldown
+    (GitHub Actions pinned to commit SHAs by Dependabot, the newest Trivy
+    release at least 7 days old), while components of GitHub-hosted runners
+    (e.g. the `actions/setup-python` interpreter, `git`, `gh`) follow
+    the runner image updates. Python minor version is set by `cog`,
+    `uv` version by `uv.lock`.
 
 ## Procedure
 
@@ -60,7 +66,29 @@ contributors must follow these steps:
 1. Research the package. Is it well-maintained? Does it have a good reputation?
 1. Choose a compatible version of the package.
     Use the latest version whenever possible.
-1. Update the `pyproject.toml` and lock the dependencies.
+1. Update `[project].dependencies` in `pyproject.toml`, then run
+    `uv lock` to lock the dependencies.
+
+## Vulnerabilities
+
+`uv.lock` is the single source of dependency versions and it is updated
+only by Dependabot (or when `pyproject.toml` changes):
+
+- version updates wait 7 days after a release (`cooldown`),
+    so freshly published (possibly malicious) releases are not used
+- security updates fix vulnerable packages without the cooldown,
+    as soon as the advisory is published
+
+`uv audit` (`prek` and CI) fails on known vulnerabilities, resolve them as follows:
+
+<!-- pyml disable-num-lines 7 line-length-->
+
+| Situation                  | Action                                                                |
+| -------------------------- | --------------------------------------------------------------------- |
+| Fix released               | Merge the Dependabot security update (or `uv lock --upgrade-package`) |
+| Fix capped by a dependency | Bump or replace the dependency                                        |
+| No fix released            | `ignore-until-fixed` in `[tool.uv.audit]` with a reason               |
+| Not applicable to `comver` | `ignore` in `[tool.uv.audit]` with a reason                           |
 
 ## Archived or deprecated packages
 

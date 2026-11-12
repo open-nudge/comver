@@ -1,73 +1,91 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Shared tests functionality.
-
-Each shared functionality should be placed in this file and
-added to the `pytest` namespace (later reused by other tests).
-
-"""
+"""Shared tests functionality."""
 
 from __future__ import annotations
 
-import argparse
-import dataclasses
 import typing
 
 import pytest
 
+import comver
 
-@dataclasses.dataclass
-class ComverVersionTester:
-    """Stripped-down version tester for `comver`.
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
-    Attributes:
-        major:
-            Major version number.
-        minor:
-            Minor version number.
-        patch:
-            Patch version
+
+@pytest.fixture(scope="session", autouse=True)
+def _git_isolation() -> Iterator[None]:
+    """Detach test repositories from the repository running the tests.
+
+    Exported by git to hooks (`git commit` -> prek -> pytest); if left out,
+    they redirect `git` in temporary test repositories to the outer repository
+    (see `git rev-parse --local-env-vars`).
+
+    > Session scoped, as function scoped fixtures fail
+    > `hypothesis` health checks.
+
+    Yields:
+        Nothing, environment is restored afterwards.
 
     """
+    envs = (
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG",
+        "GIT_DIR",
+        "GIT_GRAFT_FILE",
+        "GIT_IMPLICIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_NO_REPLACE_OBJECTS",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_REPLACE_REF_BASE",
+        "GIT_SHALLOW_FILE",
+        "GIT_WORK_TREE",
+    )
 
-    major: int = 0
-    minor: int = 0
-    patch: int = 0
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        for name in envs:
+            monkeypatch.delenv(name, raising=False)
+        yield
 
-    def to_tuple(self) -> tuple[int, int, int]:
-        """Return version as tuple."""
-        return self.major, self.minor, self.patch
 
-    def bump(
-        self, commit_type: typing.Literal["fix", "feat", "feat!", "fix!"]
-    ) -> None:
-        """Bump version based on commit type.
+class Oracle:
+    """Expected version calculator (independent of `comver`)."""
+
+    def __call__(self, commit_types: Iterable[str]) -> comver.Version:
+        """Calculate the expected version.
 
         Args:
-            commit_type:
-                Commit type to bump version for.
+            commit_types:
+                Types of the consecutive commits
+                (one of `fix`, `feat`, `fix!` or `feat!`).
+
+        Returns:
+            Version after all of the commits.
 
         """
-        # Either of these may not be ran during fuzz-testing
-        if commit_type in {"fix!", "feat!"}:  # pragma: no cover
-            self.major += 1
-            self.minor, self.patch = 0, 0
-        elif commit_type == "feat":  # pragma: no cover
-            self.minor += 1
-            self.patch = 0
-        elif commit_type == "fix":  # pragma: no cover
-            self.patch += 1
+        major, minor, patch = 0, 0, 0
+        for commit_type in commit_types:
+            if commit_type.endswith("!"):
+                major, minor, patch = major + 1, 0, 0
+            elif commit_type == "feat":
+                minor, patch = minor + 1, 0
+            else:
+                patch += 1
+        return comver.Version(major, minor, patch)
 
 
-pytest.ComverVersionTester = ComverVersionTester  # pyright: ignore [reportAttributeAccessIssue]
-"""Hack making `ComverVersionTester` globally test available."""
+@pytest.fixture(scope="session")
+def expected() -> Oracle:
+    """Expected version calculator (independent of `comver`).
 
-ARGS = argparse.Namespace()
-ARGS.sha = True
-ARGS.checksum = True
-ARGS.format = "line"
-pytest.ComverCalculateArgs = ARGS  # pyright: ignore [reportAttributeAccessIssue]
-"""Hack making CLI args for calculate subcommand globally available."""
+    Returns:
+        Callable calculating version from consecutive commit types.
+
+    """
+    return Oracle()

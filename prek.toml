@@ -1,0 +1,565 @@
+# SPDX-FileCopyrightText: © 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+default_stages = [
+  "pre-commit",
+]
+default_install_hook_types = [
+  "pre-commit",
+  "commit-msg",
+  "pre-push",
+  "post-checkout",
+  "post-merge",
+]
+fail_fast = true
+
+[update]
+cooldown_days = 7
+
+# Patch releases every few days, minor releases are enough
+[update.repos."https://github.com/trufflesecurity/trufflehog"]
+include_tags = ["v*.*.0"]
+
+# Older v* tags and lychee-lib-v* tags are not lychee releases
+[update.repos."https://github.com/lycheeverse/lychee"]
+include_tags = ["lychee-v*"]
+
+##############################################################################
+#
+#                       NON PYPROJECT BASED CHECKS
+#
+##############################################################################
+
+[[repos]]
+repo = "builtin"
+
+  [[repos.hooks]]
+  id = "trailing-whitespace"
+  verbose = true
+  name = "<<<FIX>>> Trailing whitespace"
+  exclude = "^LICENSE$"
+  priority = 60
+
+  [[repos.hooks]]
+  id = "end-of-file-fixer"
+  alias = "eof-fixer"
+  verbose = true
+  name = "<<<FIX>>> End of file"
+  exclude = "^LICENSE$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "mixed-line-ending"
+  verbose = true
+  args = ["--fix=lf"]
+  name = "<<<FIX>>> Mixed line endings"
+  exclude = "^LICENSE$"
+  priority = 80
+
+  [[repos.hooks]]
+  id = "check-added-large-files"
+  alias = "large-files"
+  verbose = true
+  name = "<<<CHECK>>> No large files"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-case-conflict"
+  alias = "case-conflict"
+  verbose = true
+  name = "<<<CHECK>>> Case conflict"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-symlinks"
+  alias = "symlinks"
+  verbose = true
+  name = "<<<CHECK>>> Symlinks"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-merge-conflict"
+  alias = "merge-conflict"
+  verbose = true
+  name = "<<<CHECK>>> Merge conflicts"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "no-commit-to-branch"
+  alias = "main-branch"
+  verbose = true
+  name = "<<<CHECK>>> Main branch"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-executables-have-shebangs"
+  alias = "executables"
+  verbose = true
+  name = "<<<CHECK>>> Executables"
+  priority = 10
+
+  # Language specific checks
+  [[repos.hooks]]
+  id = "check-json"
+  alias = "json"
+  verbose = true
+  name = "<<<CHECK>>> JSON syntax"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-json5"
+  alias = "json5"
+  verbose = true
+  name = "<<<CHECK>>> JSON5 syntax"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-toml"
+  alias = "toml"
+  verbose = true
+  name = "<<<CHECK>>> TOML syntax"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-xml"
+  alias = "xml"
+  verbose = true
+  name = "<<<CHECK>>> XML syntax"
+  priority = 10
+
+[[repos]]
+repo = "meta"
+
+  [[repos.hooks]]
+  id = "check-useless-excludes"
+  alias = "prek-useless"
+  verbose = true
+  name = "<<<CHECK>>> prek Useless excludes"
+  priority = 10
+
+[[repos]]
+repo = "https://github.com/siderolabs/conform"
+rev = "57c5cc3cabc0c9219d69673cfa8faa49c2db76fb" # frozen: v0.1.0-alpha.32
+
+  [[repos.hooks]]
+  id = "conform"
+  alias = "policy"
+  name = "<<<CHECK>>> Policy"
+  verbose = true
+  stages = [
+    "pre-push",
+  ]
+  entry = "conform enforce"
+  pass_filenames = false
+  priority = 10
+
+
+[[repos]]
+repo = "https://github.com/trufflesecurity/trufflehog"
+rev = "e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9" # frozen: v3.99.2
+
+  [[repos.hooks]]
+  id = "trufflehog"
+  alias = "secrets"
+  name = "<<<CHECK>>> Secrets"
+  verbose = true
+  priority = 10
+
+[[repos]]
+repo = "https://github.com/lycheeverse/lychee"
+rev = "2bba271688c1abb1503097a064e6c3bc1d1b6a9b"  # frozen: lychee-v0.24.2
+
+  # Built from the pinned source (cargo install --locked), configured in lychee.toml
+  [[repos.hooks]]
+  id = "lychee-system"
+  alias = "links"
+  name = "<<<CHECK>>> Links"
+  language = "rust"
+  verbose = true
+  types = ["markdown"]
+  exclude = "^(DCO.md|template-setup/.*|LICENSE|LICENSES/.*|\\.agents/.*)$"
+  priority = 70
+
+
+[[repos]]
+repo = "https://github.com/errata-ai/vale"
+rev = "e2d4374b1c66c8a1dd6d912bebc135040d8833fa" # frozen: v3.26.0
+
+  [[repos.hooks]]
+  id = "vale"
+  alias = "setup-natural-language"
+  entry = "vale sync"
+  name = "<<<SETUP>>> Natural language"
+  verbose = true
+  pass_filenames = false
+  require_serial = true
+  stages = ["pre-commit"]
+  priority = 10
+
+  [[repos.hooks]]
+  id = "vale"
+  alias = "natural-language"
+  name = "<<<CHECK>>> Natural language"
+  exclude = "^LICENSE$"
+  verbose = true
+  priority = 20
+
+[[repos]]
+repo = "https://github.com/rhysd/actionlint"
+rev = "914e7df21a07ef503a81201c76d2b11c789d3fca" # frozen: v1.7.12
+
+  [[repos.hooks]]
+  id = "actionlint"
+  alias = "github-actions-actionlint"
+  name = "<<<CHECK>>> GitHub Actions actionlint"
+  verbose = true
+  priority = 70
+
+[[repos]]
+repo = "https://github.com/semgrep/pre-commit"
+rev = "a19f9deb8c211c43e469e994fa8ee15178bc1b1d" # frozen: v1.183.0
+
+  # Keep these arguments aligned with the Docker scan in
+  # .github/workflows/_security-semgrep.yml.
+  [[repos.hooks]]
+  id = "semgrep"
+  alias = "security"
+  name = "<<<CHECK>>> Security"
+  # Python 3.15 crashes semgrep-core on Linux (RLIM_INFINITY stack limit),
+  # see https://github.com/semgrep/semgrep/issues/11979
+  language_version = "3.14"
+  args = [
+    "scan",
+    "--exclude=*uv.lock",
+    "--config=p/python",
+    "--config=p/secrets",
+    "--config=p/security-audit",
+    "--config=p/ci",
+    "--config=p/github-actions",
+    "--config=p/bandit",
+    "--config=p/gitleaks",
+    "--config=p/trailofbits",
+    "--error",
+    "--metrics=off",
+    "--severity=INFO",
+    "--strict",
+    ".",
+  ]
+  verbose = true
+  pass_filenames = false
+  require_serial = true
+  priority = 70
+
+##############################################################################
+#
+#                         PYPROJECT BASED CHECKS
+#
+##############################################################################
+
+[[repos]]
+repo = "local"
+
+  [[repos.hooks]]
+  id = "uv-sync"
+  alias = "sync"
+  verbose = true
+  name = "<<<CHECK>>> uv sync"
+  entry = "uv sync --all-extras"
+  pass_filenames = false
+  language = "system"
+  stages = ["post-checkout", "post-merge"]
+  always_run = true
+  # Different sync moment
+  priority = 30
+
+  [[repos.hooks]]
+  id = "dco"
+  verbose = true
+  name = "<<<CHECK>>> DCO"
+  language = "fail"
+  entry = """
+  Changing DCO is prohibited according to the DCO itself.
+  If you wish to change/remove it, please do so in a separate commit
+  and disable this check.
+  """
+  files = "^DCO.md$"
+  # Should never be touched, indifferent to all the checks
+  priority = 30
+
+  [[repos.hooks]]
+  id = "commit"
+  verbose = true
+  name = "<<<CHECK>>> Commit"
+  entry = "uv run poe -v check-commit"
+  language = "system"
+  stages = ["commit-msg"]
+  always_run = true
+  # Commit message, largely unrelated
+  priority = 30
+
+
+  [[repos.hooks]]
+  id = "uv-lock"
+  verbose = true
+  name = "<<<FIX>>> uv lock"
+  # No upgrades, Dependabot updates uv.lock (7 day cooldown, security at once)
+  entry = "uv lock"
+  pass_filenames = false
+  language = "system"
+  always_run = true
+  # Before uv-audit, which reads uv.lock
+  priority = 25
+
+  # Runs on every commit, new advisories appear without lock changes
+  [[repos.hooks]]
+  id = "uv-audit"
+  alias = "audit"
+  verbose = true
+  name = "<<<CHECK>>> uv audit"
+  entry = "uv run poe -v check-audit"
+  pass_filenames = false
+  language = "system"
+  always_run = true
+  # After uv-lock, reads uv.lock
+  priority = 30
+
+  [[repos.hooks]]
+  id = "prek"
+  verbose = true
+  name = "<<<FIX>>> Prek"
+  entry = "uv run prek autoupdate --freeze"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  always_run = true
+  # uv and prek are essentially independent
+  priority = 30
+
+  [[repos.hooks]]
+  id = "generation"
+  verbose = true
+  name = "<<<FIX>>> Generation"
+  entry = "uv run poe -v fix-generation"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  always_run = true
+  # Second pass
+  priority = 40
+
+  [[repos.hooks]]
+  id = "fix-legal"
+  name = "<<<FIX>>> Legal"
+  entry = "uv run poe -v fix-legal"
+  language = "system"
+  require_serial = true
+  exclude = "^(uv.lock.*|DCO.md|.gitignore|LICENSE|LICENSES/.*)$"
+  priority = 50
+
+  [[repos.hooks]]
+  id = "text"
+  verbose = true
+  name = "<<<FIX>>> Text"
+  entry = "uv run poe -v fix-text"
+  language = "system"
+  require_serial = true
+  types = ["text"]
+  exclude = "^LICENSE$"
+  priority = 60
+
+  [[repos.hooks]]
+  id = "license"
+  verbose = true
+  name = "<<<CHECK>>> License"
+  entry = ".github/tools/license.sh"
+  pass_filenames = false
+  language = "system"
+  files = "^(LICENSE|LICENSES/.*)$"
+  priority = 10
+
+  [[repos.hooks]]
+  id = "check-legal"
+  verbose = true
+  name = "<<<CHECK>>> Legal"
+  entry = "uv run poe -v check-legal"
+  language = "system"
+  require_serial = true
+  pass_filenames = false
+  priority = 70
+
+  [[repos.hooks]]
+  id = "github"
+  verbose = true
+  name = "<<<CHECK>>> GitHub"
+  entry = "uv run poe -v check-github"
+  language = "system"
+  require_serial = true
+  types = ["file"]
+  files = "^(.github/actions/.*/action.yml|.github/workflows/.*.yml)$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "github-actions"
+  verbose = true
+  name = "<<<CHECK>>> GitHub Actions"
+  entry = "uv run poe -v check-github-actions"
+  language = "system"
+  require_serial = true
+  types = ["file"]
+  files = "^.github/actions/.*/action.yml$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "github-workflows"
+  verbose = true
+  name = "<<<CHECK>>> GitHub Workflows"
+  entry = "uv run poe -v check-github-workflows"
+  language = "system"
+  require_serial = true
+  types = ["file"]
+  files = "^.github/workflows/.*.yml$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "pyproject"
+  verbose = true
+  name = "<<<CHECK>>> pyproject"
+  entry = "uv run poe -v check-pyproject"
+  files = "^pyproject.toml$"
+  language = "system"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "pre-commit-config"
+  verbose = true
+  name = "<<<CHECK>>> prek config"
+  entry = "uv run poe -v check-prek-config"
+  files = "^.pre-commit-config.yaml$"
+  language = "system"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "pre-commit-hooks"
+  verbose = true
+  name = "<<<CHECK>>> prek hooks"
+  entry = "uv run poe -v check-prek-hooks"
+  files = "^.pre-commit-hooks.yaml$"
+  language = "system"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "citation"
+  verbose = true
+  name = "<<<CHECK>>> Citation"
+  entry = "uv run poe -v check-citation"
+  files = "^CITATION.cff$"
+  language = "system"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "ini"
+  verbose = true
+  name = "<<<CHECK>>> INI"
+  entry = "uv run poe -v check-ini"
+  language = "system"
+  require_serial = true
+  types_or = ["ini", "editorconfig"]
+  priority = 70
+
+  [[repos.hooks]]
+  id = "markdown"
+  verbose = true
+  name = "<<<FIX>>> Markdown"
+  entry = "uv run poe -v fix-markdown"
+  language = "system"
+  require_serial = true
+  types = ["markdown"]
+  exclude = "^(DCO.md|template-setup/.*|LICENSE|LICENSES/.*|\\.agents/.*)$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "yaml"
+  verbose = true
+  name = "<<<CHECK>>> YAML"
+  entry = "uv run poe -v check-yaml"
+  language = "system"
+  require_serial = true
+  types = ["yaml"]
+  priority = 70
+
+  [[repos.hooks]]
+  id = "docs"
+  verbose = true
+  name = "<<<CHECK>>> Docs"
+  entry = "uv run poe -v check-docs"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  types = ["file"]
+  files = "^(docs/.*|pyproject.toml|mkdocs.yml|src/.*.py|.*.md)$"
+  priority = 70
+
+  [[repos.hooks]]
+  id = "fix-shell"
+  verbose = true
+  name = "<<<FIX>>> Shell"
+  entry = "uv run poe -v fix-shell"
+  language = "system"
+  require_serial = true
+  types = ["shell"]
+  priority = 70
+
+  [[repos.hooks]]
+  id = "check-shell"
+  verbose = true
+  name = "<<<CHECK>>> Shell"
+  entry = "uv run poe -v check-shell"
+  language = "system"
+  require_serial = true
+  types = ["shell"]
+  priority = 80
+
+  [[repos.hooks]]
+  id = "python"
+  verbose = true
+  name = "<<<FIX>>> Python"
+  entry = "uv run poe -v fix-python"
+  language = "system"
+  require_serial = true
+  types = ["python"]
+  priority = 70
+
+  [[repos.hooks]]
+  id = "typing"
+  verbose = true
+  name = "<<<CHECK>>> Typing"
+  entry = "uv run poe -v check-typing"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  types = ["python"]
+  priority = 80
+
+  [[repos.hooks]]
+  id = "tests-all"
+  alias = "tests"
+  verbose = true
+  name = "<<<CHECK>>> Tests all"
+  entry = "uv run poe -v tests-all"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  types = ["python"]
+  priority = 90
+
+  [[repos.hooks]]
+  id = "release"
+  name = "<<<CHECK>>> Release"
+  entry = "uv run poe -v check-release"
+  pass_filenames = false
+  language = "system"
+  require_serial = true
+  always_run = true
+  priority = 100

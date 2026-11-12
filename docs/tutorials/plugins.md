@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -26,7 +26,7 @@ build-backend = "pdm.backend"
 
 requires = [
   "pdm-backend",
-  "comver>=0.1.0",
+  "comver>=2",
 ]
 
 # Setup versioning for PDM
@@ -49,8 +49,8 @@ To integrate with Hatch, edit your `pyproject.toml` as follows:
 build-backend = "hatchling.build"
 
 requires = [
-  "comver>=0.1.0",
   "hatchling",
+  "comver[hatchling]>=2",
 ]
 
 # Setup versioning for Hatchling

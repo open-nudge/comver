@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -14,30 +14,42 @@ This guide covers essential adjustments to the template.
 > If your changes relate to a specific section, you may want to
 > consult [details documentation](../details/index.md).
 
-## `pyproject.toml`
+## Project metadata
 
-Most adjustments are made in `pyproject.toml`, which controls:
+Declare package metadata directly in the `[project]` table of
+`pyproject.toml`.
+
+- __Runtime Dependencies__ – Add dependencies to `[project].dependencies`;
+    uv resolves them into `uv.lock`.
+- __Keywords__ – Edit `[project].keywords`.
+- __Classifiers__ – Edit `[project].classifiers`.
+- __Nested Metadata__ – Configure optional dependencies, scripts,
+    GUI scripts, and entry points in the corresponding `[project]` fields.
+
+## Tool configuration
+
+Development and tool adjustments are made in `pyproject.toml`, which controls:
 
 - __Developer Dependencies__ – Managed in `[dependency-groups]`
     (each dependency prefixed by `dev`).
 - __Tool Settings__ – Configures tools like
     [`ruff`](https://docs.astral.sh/ruff/configuration/)
     section `[tool.<name-of-tool>]`.
-- __Developer Commands__ – Defined under `[tool.pdm.scripts]`
+- __Developer Commands__ – Defined under `[tool.poe.tasks]`
     (usually `check-<type>` or `fix-<type>`).
 
 > [!NOTE]
-> Sections are ordered by importance and assumed frequency of change.
+> Tool sections are ordered by importance and assumed frequency of change.
 
-## `pre-commit`
+## `prek`
 
 Some tools not integrated with `pyproject.toml` can be configured
-by editing `.pre-commit-config.yaml`.
+by editing `prek.toml`.
 
 > [!TIP]
 > Non-`pyproject.toml` configurations are at the beginning of the file.
 
-More details: [pre-commit documentation](https://pre-commit.com/#usage)
+More details: [prek documentation](https://prek.j178.dev/configuration/)
 
 ## GitHub Actions
 
@@ -65,5 +77,5 @@ For other modifications, check:
 ## Code sources
 
 - `pyproject.toml`
-- `.pre-commit-config.yaml`
+- `prek.toml`
 - `.github/workflows/`

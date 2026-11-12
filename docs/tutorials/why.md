@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -16,7 +16,7 @@ SPDX-License-Identifier: Apache-2.0
 > a silver bullet for versioning challenges. Its goal
 > is to improve upon current practices where possible.
 
-See the points below to understand the movitation and how
+See the points below to understand the motivation and how
 `comver` might help!
 
 ## Strict `semver` adherence

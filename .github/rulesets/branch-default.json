@@ -1,0 +1,99 @@
+{
+  "enforcement": "active",
+  "name": "branch-default",
+  "rules": [
+    {
+      "parameters": {
+        "required_approving_review_count": "PLACEHOLDER_REVIEWERS",
+        "require_last_push_approval": "PLACEHOLDER_LAST_PUSH_APPROVAL",
+        "require_code_owner_review": true,
+        "dismiss_stale_reviews_on_push": true,
+        "required_review_thread_resolution": true,
+        "automatic_copilot_code_review_enabled": true,
+        "allowed_merge_methods": [
+          "squash"
+        ]
+      },
+      "type": "pull_request"
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "Commit / _Commit / Check / Run",
+            "integration_id": 15368
+          },
+          {
+            "context": "Generation / _Generation / Check / Run",
+            "integration_id": 15368
+          },
+          {
+            "context": "Legal / _Legal / Check / Run",
+            "integration_id": 15368
+          },
+          {
+            "context": "Legal Dependencies / _Legal Dependencies",
+            "integration_id": 15368
+          },
+          {
+            "context": "Policy",
+            "integration_id": 15368
+          },
+          {
+            "context": "prek / _prek",
+            "integration_id": 15368
+          },
+          {
+            "context": "Pull Request",
+            "integration_id": 15368
+          },
+          {
+            "context": "Release Check / _Release Check / Check / Run",
+            "integration_id": 15368
+          },
+          {
+            "context": "Release Check / _Release Check Build",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security CodeQL / _Security CodeQL",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security uv audit / _Security uv audit",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security SBOM GitHub / SBOM Create",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security SBOM Legal / SBOM Create",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security Secrets",
+            "integration_id": 15368
+          },
+          {
+            "context": "Security Semgrep / _Security Semgrep",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ],
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "~DEFAULT_BRANCH"
+      ],
+      "exclude": []
+    }
+  },
+  "target": "branch"
+}

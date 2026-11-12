@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -36,7 +36,7 @@ This command outputs three space-separated values:
 <VERSION> <SHA> <CHECKSUM>
 ```
 
-Iti s recommended to store this output (e.g. attach it to the
+It is recommended to store this output (e.g. attach it to the
 [GitHub release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases))
 for later verification.
 
@@ -74,7 +74,7 @@ version=$(echo "$json" | jq -r '.version')
 sha=$(echo "$json" | jq -r '.sha')
 checksum=$(echo "$json" | jq -r '.checksum')
 
-# Call baz with the arguments in order: version, sha, checksum
+# Call comver verify with the arguments in order: version, sha, checksum
 comver verify "${version}" "${sha}" "${checksum}"
 ```
 

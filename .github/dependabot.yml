@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: © 2026 open-nudge <https://github.com/open-nudge>
+# SPDX-FileContributor: szymonmaszke <github@maszke.co>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "fix"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "fix"
+    groups:
+      uv:
+        patterns:
+          - "*"
+    ignore:
+      # pytest-markdown-docs pins markdown-it-py<4, uv.lock keeps 3.x
+      - dependency-name: "markdown-it-py"
+        versions:
+          - ">=4"
+...

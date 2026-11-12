@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -14,7 +14,7 @@ on:
       - "**.md"
       - "**.py"
       - "**.sh"
-      - "!LICENSE.md"
+      - "!LICENSE"
       - "!docs/LICENSE.md"
       - "!LICENSES/*"
       - ".github/workflows/prose.yml"
@@ -22,7 +22,10 @@ on:
     types:
       - "checks_requested"
 
+# enq: the only way to set permissions to none in GH Actions
 permissions: {} # yamllint disable-line rule:braces
+
+cache-mode: "read"
 
 concurrency:
   group: >
@@ -36,23 +39,31 @@ jobs:
       contents: "read"
     timeout-minutes: 10
     runs-on: "ubuntu-latest"
-    container:
-      # yamllint disable rule:line-length
-      image: "docker.io/jdkato/vale@sha256:a744bc4f8164bceab6bda0fad6253dcd9cdab2365b437aa5e08fe4f07d6e3357" # v3.8.0
-      # yamllint enable rule:line-length
     steps:
+      - name: "Harden Runner"
+        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        with:
+          disable-sudo: true
+          # enq: cannot reliably prevent and inspect docker steps egress
+          egress-policy: "audit"
       - name: "Checkout repository"
-        # yamllint disable rule:line-length
-        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
-        # yamllint enable rule:line-length
-        # Exclude license files from the checkout
-        # Sparse checkout does not work within the Vale container
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
         with:
           persist-credentials: false
-      - name: "Sync Vale Packages"
-        run: >
-          /bin/vale sync
-      - name: "Prose Linter"
-        run: >
-          /bin/vale .
+      - name: "Sync Vale packages"
+        # enq: the image reference is digest-pinned.
+        # yamllint disable rule:line-length
+        uses: "docker://docker.io/jdkato/vale:v3.20.0@sha256:5a2852baf6332a2beb2aa187aa4828ce600b0368720e338f8ea8521cdb826a1d"
+        # yamllint enable rule:line-length
+        with:
+          args: "sync"
+      - name: "Check prose with Vale"
+        # enq: the image reference is digest-pinned.
+        # yamllint disable rule:line-length
+        uses: "docker://docker.io/jdkato/vale:v3.20.0@sha256:5a2852baf6332a2beb2aa187aa4828ce600b0368720e338f8ea8521cdb826a1d"
+        # yamllint enable rule:line-length
+        with:
+          args: "--glob=!{LICENSE,LICENSES/**} ."
+      - name: "Check for generated changes"
+        run: "git diff --exit-code"
 ...

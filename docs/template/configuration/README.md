@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 SPDX-FileContributor: szymonmaszke <github@maszke.co>
 
 SPDX-License-Identifier: Apache-2.0
@@ -7,8 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Configuration
 
-Most settings for `opentemplate` are managed in `pyproject.toml`,
-with full flexibility for customization if needed.
+Routine package metadata is declared directly in the `[project]` table of
+`pyproject.toml`. uv resolves dependency declarations into `uv.lock`;
+`prek.toml` and workflows configure development tools and CI.
 
 Start here:
 

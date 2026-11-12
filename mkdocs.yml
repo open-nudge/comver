@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 ---
+# enq: automatically generated description might be too long for yamllint
 # yamllint disable rule:line-length
 site_name: >-
   comver
 site_description: >-
-  Commit-based semantic versioning — verifiable, immutable, and tag-free.
+  Commit-based semantic versioning - highly configurable and tag-free.
 site_url: >-
   https://open-nudge.github.io/comver/
 repo_url: >-
@@ -152,7 +153,6 @@ markdown_extensions:
   - "pymdownx.details"
   - "pymdownx.snippets"
   - "pymdownx.inlinehilite"
-  - "pymdownx.critic"
   - "pymdownx.caret"
   - "pymdownx.keys"
   - "pymdownx.mark"

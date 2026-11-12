@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: © 2025 open-nudge <https://github.com/open-nudge>
+# SPDX-FileCopyrightText: © 2025, 2026 open-nudge <https://github.com/open-nudge>
 # SPDX-FileContributor: szymonmaszke <github@maszke.co>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 [build-system]
-build-backend = "pdm.backend"
+build-backend = "hatchling.build"
 
 requires = [
-  "commition[pdm]>=0.0.1",
-  "pdm-backend>=2",
+  "hatchling>=1",
+  "comver[hatchling]>=1",
+  "python-sbom[hatch]>=0.3",
 ]
 
 [project]
@@ -34,8 +35,8 @@ authors = [
 # cycle = cogeol.scientific()[-1]["cycle"]
 # cog.out(f'requires-python = ">={cycle}"')
 # ]]]
-requires-python = ">=3.12"
-# [[[end]]] (sum: ChWHeFtwKI)
+requires-python = ">=3.13"
+# [[[end]]] (sum: zX38HHIAaw)
 
 # Full list of classifiers: https://pypi.org/classifiers/
 classifiers = [
@@ -54,54 +55,53 @@ classifiers = [
   #     cycle = version["cycle"]
   #     cog.outl(f'  "Programming Language :: Python :: {cycle}",')
   # ]]]
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
-  # [[[end]]] (sum: n4HYN0jbX1)
+  "Programming Language :: Python :: 3.15",
+  # [[[end]]] (sum: Z4mtja39mg)
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
   "Framework :: Hatch",
 ]
-dynamic = [ "version" ]
-
-###############################################################################
-#
-#                              DEPENDENCIES
-#
-###############################################################################
-
 dependencies = [
   "loadfig>=0.1.0",
   "GitPython>=3",
 ]
+dynamic = [ "version" ]
 
 optional-dependencies.hatchling = [
   "hatchling>=1.27.0",
 ]
 
-urls.Changelog = "https://github.com/open-nudge/comver/blob/master/CHANGELOG.md"
+urls.Changelog = "https://github.com/open-nudge/comver/blob/main/CHANGELOG.md"
 urls.Documentation = "https://open-nudge.github.io/comver"
 urls.Homepage = "https://open-nudge.github.io/comver"
 urls.Issues = "https://github.com/open-nudge/comver/issues"
 urls.Repository = "https://github.com/open-nudge/comver"
 
-[project.scripts]
-comver = "comver._cli:main"
+scripts.comver = "comver._cli:main"
 
-[project.entry-points.hatch]
-comver = "comver.plugin"
+entry-points.hatch.comver = "comver.plugin"
 
 [dependency-groups]
 dev-tests = [
   # Fuzz/property testing for Python
   "coverage>=7",
   "hypothesis>=6",
+  "mutmut>=3",
+  "pyrefly>=0.64.1",
   "pytest>=8",
   "pytest-asyncio>=1",
+  "pytest-env>=1",
+  "pytest-github-actions-annotate-failures>=0.3",
   "pytest-html>=4",
+  "pytest-markdown-docs>=0.9",
+  "pytest-mock>=3",
   "pytest-pretty-terminal>=1",
   "pytest-randomly>=3",
+  "pytest-socket>=0.7",
+  "pytest-timeout>=2",
 ]
 
 dev-docs = [
@@ -131,27 +131,28 @@ dev-docs = [
 ]
 
 dev-python = [
-  "fawltydeps>=0.17.0",
   "interrogate>=1",
   "ruff>=0.5.6",
+  "pynudger>=3",
+  "noqaexplain>=2",
 ]
 
 dev-typing = [
   # Needed to type check testing as well
   { include-group = "dev-tests" },
-  "basedpyright>=1.28.1",
 ]
 
 dev-shell = [
   "shellcheck-py>=0.10.0",
+  "noqaexplain>=2",
 ]
 
 dev-yaml = [
   "yamllint>=1",
+  "noqaexplain>=2",
 ]
 
 dev-markdown = [
-  "md-dead-link-check>=1.2.0",
   "mdformat>=0.7.19",
   "mdformat_frontmatter>=2",
   "mdformat_footnote>=0.1.1",
@@ -169,31 +170,8 @@ dev-pyproject = [
   "validate-pyproject>=0.18",
 ]
 
-dev-code = [
-  "editorconfig-checker>=3",
-  "codespell>=2",
-]
-
 dev-citation = [
-  # Has to be pinned due to latest fixes not pushed to PyPI
-  # Citations will not be updated by renovate due to this issue as well
-  "cffconvert @ git+https://github.com/citation-file-format/cffconvert@b6045d78aac9e02b039703b030588d54d53262ac",
-]
-
-dev-security = [
-  # Semgrep may be a little rough for some releases, specify it ONLY for one version
-  #
-  #           DO NOT EDIT UNTIL end marker
-  #
-  # [[[cog
-  # import cog
-  # import cogeol
-  #
-  # cycle = cogeol.scientific()[-1]["cycle"]
-  # cog.out(f'''  "semgrep>=1; platform_system!='Windows' and python_version=='{cycle}'"''')
-  # ]]]
-  "semgrep>=1; platform_system!='Windows' and python_version=='3.12'"
-  # [[[end]]] (sum: xEbnmglzzV)
+  "check-jsonschema>=0.31.2",
 ]
 
 dev-github = [
@@ -203,6 +181,33 @@ dev-github = [
 
 dev-legal = [
   "reuse>=4",
+]
+
+# Installed from the template by the security workflows (see setup-release)
+dev-security = [
+  # No Windows support; pinned pygit2 and yara-python lack Python 3.14 wheels
+  "guarddog>=3.2.0; sys_platform != 'win32' and python_version < '3.14'",
+  "zizmor>=1",
+]
+
+# uv version installed by CI and release jobs (setup-uv reads it from uv.lock)
+dev-bootstrap = [
+  "uv>=0.11.8",
+]
+
+# Task runner, all tasks are run via `uv run poe <task>`
+dev-tasks = [
+  "poethepoet>=0.37",
+]
+
+
+dev-build = [
+  "hatchling>=1",
+  "comver[hatchling]>=1",
+  "python-sbom[hatch]>=0.3",
+  # Writes the template's pyproject.toml (see .github/actions/dist-build)
+  # also provided by hatchling, but mentioned explicitly for safety
+  "tomlkit>=0.13",
 ]
 
 dev-release = [
@@ -221,11 +226,36 @@ dev-commit = [
   "conventional-pre-commit>=4",
 ]
 
-dev-pre-commit = [
-  "pre-commit>=3",
+dev-prek = [
+  "prek>=0.3.4",
 ]
 
+dev-json = [
+  "prek>=0.3.4",
+]
+
+dev-json5 = [
+  "prek>=0.3.4",
+]
+
+dev-toml = [
+  "prek>=0.3.4",
+]
+
+dev-xml = [
+  "prek>=0.3.4",
+]
+
+dev-text = [
+  "codespell>=2",
+  "prek>=0.3.4",
+]
+
+# Groups below are currently taken mostly out of the prek-hooks,
+# each separated to be more semantically coherent and expandable.
+
 dev-all = [
+  { include-group = "dev-tasks" },
   { include-group = "dev-tests" },
   { include-group = "dev-docs" },
   { include-group = "dev-python" },
@@ -235,44 +265,80 @@ dev-all = [
   { include-group = "dev-markdown" },
   { include-group = "dev-ini" },
   { include-group = "dev-pyproject" },
-  { include-group = "dev-code" },
+  { include-group = "dev-text" },
   { include-group = "dev-citation" },
-  { include-group = "dev-security" },
   { include-group = "dev-github" },
   { include-group = "dev-legal" },
+  { include-group = "dev-security" },
+  { include-group = "dev-build" },
   { include-group = "dev-release" },
   { include-group = "dev-generation" },
   { include-group = "dev-commit" },
-  { include-group = "dev-pre-commit" },
+  { include-group = "dev-prek" },
+  { include-group = "dev-json" },
+  { include-group = "dev-json5" },
+  { include-group = "dev-toml" },
+  { include-group = "dev-xml" },
 ]
 
 ###############################################################################
 #
-#                             TOOL SETTINGS
+#                             SETTINGS
 #
 ###############################################################################
 
-[tool.pdm]
-distribution = true
+# Release builds use the template's settings so changes to this one are ignored
+[tool.hatch.version]
+source = "comver"
 
-[tool.pdm.version]
-source = "call"
-getter = "commition.plugin.pdm:git"
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "src",
+  "LICENSES",
+]
+
+[tool.hatch.build.hooks.python-sbom]
+
+[tool.python-sbom]
+supplier = { name = "open-nudge", url = ["https://github.com/open-nudge"] }
+
+[tool.uv]
+required-version = ">=0.11.8"
+package = true
+default-groups = [ "dev-all" ]
+cache-keys = [
+  { file = "pyproject.toml" },
+  { file = "src/**" },
+  { git = { commit = true, tags = true } },
+]
+
+# Vulnerability IDs (any alias), each with a reason in a comment
+[tool.uv.audit]
+ignore = []
+# Advisories without a fix, reported again once a fix is released
+ignore-until-fixed = []
 
 [tool.ruff]
-line-length = 80
+line-length = 110
 src = [
   "src",
-  "test",
+  "tests",
 ]
 extend-exclude = [
-  ".pdm-plugins",
+  ".pytest_cache",
+  ".venv",
+  ".venvs",
+  "build",
+  "site",
 ]
 unsafe-fixes = false
 
 show-fixes = true
 
 format.docstring-code-format = true
+lint.external = [
+  "PYNUDGER",
+]
 lint.select = [
   "ALL",
 ]
@@ -284,12 +350,21 @@ lint.extend-ignore = [
   "ISC001",
   # Prefer absolute imports over relative imports from parent modules
   "TID252",
+  # While correct, semgrep does not support this yet
+  "UP046",
+  "UP047",
+  # Incorrectly flags proper licenses
+  "CPY001",
 ]
 
 lint.extend-per-file-ignores."tests/**.py" = [
   # Pytest should not be a module
   "INP001",
   "S101",
+]
+lint.extend-per-file-ignores.".github/tools/*.py" = [
+  # Standalone scripts, not a package
+  "INP001",
 ]
 lint.extend-per-file-ignores."template-setup/overwrite/tests/**.py" = [
   # Pytest should not be a module
@@ -376,7 +451,7 @@ lint.pylint.max-returns = 5
 lint.pylint.max-statements = 20
 
 [tool.codespell]
-skip = "*pdm.lock,*__pypackages__/*"
+skip = "*uv.lock,*.venv/*,*.venvs/*"
 ignore-words-list = "intoto"
 check-filenames = true
 interactive = 0
@@ -391,10 +466,6 @@ source = [
 source_pkgs = [
   "comver",
 ]
-omit = [
-  "src/comver/**"
-]
-
 [tool.coverage.paths]
 source = [
   "src/comver",
@@ -415,83 +486,14 @@ exclude_also = [
   "class .*\\bProtocol\\):",
   "@(abc\\.)?abstractmethod",
 ]
+partial_branches = [
+  "#\\s*(pragma|PRAGMA)[:\\s]?\\s*(no|NO)\\s*(branch|BRANCH)",
+]
 
 fail_under = 100
 precision = 2
 show_missing = true
 skip_empty = true
-
-[tool.fawltydeps]
-ignore_undeclared = [
-  "mkdocs_gen_files",
-  "pytest",
-  "hypothesis",
-  "comver",
-  "git",
-]
-
-ignore_unused = [
-  "hatchling",
-  "basedpyright",
-  "cairosvg",
-  "cffconvert",
-  "check-jsonschema",
-  "cogapp",
-  "cogeol",
-  "conventional-pre-commit",
-  "coverage",
-  "cyclonedx-bom",
-  "editorconfig-checker",
-  "git-cliff",
-  "hypothesis",
-  "interrogate",
-  "markdown",
-  "md-dead-link-check",
-  "mdformat",
-  "mdformat-gfm",
-  "mdformat_footnote",
-  "mdformat_frontmatter",
-  "semgrep",
-  "shellcheck-py",
-  "termynal",
-  "validate-pyproject",
-  "yamllint",
-  "zizmor",
-  "codespell",
-  "fawltydeps",
-  "mdformat-mkdocs",
-  "mdformat_gfm_alerts",
-  "mike",
-  "mkdocs-awesome-nav",
-  "mkdocs-gen-files",
-  "mkdocs-git-revision-date-localized-plugin",
-  "mkdocs-github-admonitions-plugin",
-  "mkdocs-jupyter",
-  "mkdocs-link-marker",
-  "mkdocs-literate-nav",
-  "mkdocs-material",
-  "mkdocs-minify-plugin",
-  "mkdocs-open-in-new-tab",
-  "mkdocs-redirects",
-  "mkdocs-section-index",
-  "mkdocstrings",
-  "mkdocstrings-python",
-  "pillow",
-  "pre-commit",
-  "pygments",
-  "pyinilint",
-  "pymarkdownlnt",
-  "pymdown-extensions",
-  "pytest",
-  "pytest-asyncio",
-  "pytest-html",
-  "pytest-pretty-terminal",
-  "pytest-randomly",
-  "reuse",
-  "ruff",
-  "spdx-tools",
-  "GitPython",
-]
 
 [tool.interrogate]
 verbose = 1
@@ -499,75 +501,80 @@ style = "google"
 fail-under = 100
 exclude = [
   "build",
-  "test",
-  ".pdm-plugins",
+  "tests",
+  ".pytest_cache",
+  ".venv",
+  ".venvs",
+  "site",
 ]
 
-[tool.basedpyright]
-executionEnvironments = [
-  { root = "src", pythonVersion = "3.11" }
+[tool.pytest.ini_options]
+strict = true
+addopts = [
+  # Summary of all non-passed outcomes (failed, skipped, xfailed etc.)
+  "-ra",
+  "--durations=10",
+  "--markdown-docs",
+  # Use @pytest.mark.enable_socket to allow network for specific tests
+  "--disable-socket",
+  # asyncio event loops need local socket pairs
+  "--allow-unix-socket",
+]
+# Per-test timeout in seconds
+timeout = 300
+filterwarnings = [
+  "error",
+]
+env = [
+  "PYTHONDEVMODE=1",
+]
+testpaths = [
+  "tests",
+  "src",
+  "docs",
+]
+norecursedirs = [
+  ".git",
+  ".hypothesis",
+  ".pytest_cache",
+  ".venv",
+  ".venvs",
+  "build",
+  "site",
+  "docs/scripts",
 ]
 
-exclude = [
-  "**/node_modules",
-  "**/__pycache__",
-  "**/.*",
-  "**/__pypackages__",
-  "site/*",
-  "docs/scripts/gen_ref_pages.py",
-  "docs/scripts/preprocess_files.py",
+[tool.pyrefly]
+project-includes = [
+  "src",
+  "tests",
+  "docs/scripts",
 ]
 
-pythonPlatform = "All"
-
-#
-#           DO NOT EDIT UNTIL end marker
-#
-# [[[cog
-# import cog
-# import cogeol
-#
-# cycle = cogeol.scientific()[-1]["cycle"]
-# cog.out(f'pythonVersion = "{cycle}"')
-# ]]]
-pythonVersion = "3.12"
-# [[[end]]] (sum: CWmwxUtwUJ)
-
-failOnWarnings = true
-
-analyzeUnannotatedFunctions = true
-deprecateTypingAliases = true
-strictGenericNarrowing = true
-
-typeCheckingMode = "all"
-
-# Specific rule settings
-reportAny = "none"
-reportUnknownVariableType = "none"
-reportUnknownMemberType = "none"
-reportMissingTypeStubs = "none"
-# A lot of false positives
-reportPrivateLocalImportUsage = "none"
-reportPrivateImportUsage = "none"
-# Checked by other linters better
-reportPrivateUsage = "none"
-# Highlights non-issues in many cases and
-# hard to turn off file by file
-reportImportCycles = "none"
-
-extraPaths = [
-  #
-  #           DO NOT EDIT UNTIL end marker
-  #
-  # [[[cog
-  # import cog
-  # import cogeol
-  #
-  # cycle = cogeol.scientific()[-1]["cycle"]
-  # cog.out(f'  "__pypackages__/{cycle}/lib"')
-  # ]]]
-  "__pypackages__/3.12/lib"
-  # [[[end]]] (sum: cwShhPR5Lt)
+[tool.mutmut]
+use_setproctitle = false
+do_not_mutate_patterns = [
+    'logger\.\w+',
+    'raise \w+',
+]
+source_paths = [
+  "src/",
+]
+# Markdown code blocks are tests too (symlinks are copied as files)
+also_copy = [
+  "docs/",
+]
+pytest_add_cli_args_test_selection = [
+  "tests/",
+  "src/",
+  "docs/",
+]
+type_check_command = [
+  "pyrefly",
+  "check",
+  "--output-format=json",
+  # mutants/ is gitignored, so pyrefly would otherwise skip all files
+  "--use-ignore-files=false",
 ]
 
 [tool.pymarkdown]
@@ -579,37 +586,25 @@ plugins.md034.enabled = false
 # Disabled as the first line is SPDX license header
 plugins.md041.enabled = false
 plugins.md042.enabled = false
+# Disabled as it conflicts with mdformat around pyml pragmas
+# (pymarkdownlnt 0.9.41 counts the pragma line as blank)
+plugins.md012.enabled = false
 
-[tool.md_dead_link_check]
-exclude_links = [
-  "https://github.com/open-nudge/comver*",
-  "https://open-nudge.github.io/comver*",
-  "/LICENSE.md",
-  "https://open-nudge.github.io*",
-  "templateskip",
-]
-
-exclude_files = [
-  "template-setup/overwrite/*",
-  "pypackages/*",
-]
-
-[tool.commition]
-path_include = [
+[tool.comver]
+path_includes = [
   "src/*",
   "pyproject.toml",
 ]
 
-author_name_exclude = [
-  "github-actions[bot]",
+message_excludes = [
+  ".*\\[no version\\].*",
+  ".*\\[skip version\\].*",
+  ".*\\[version skip\\].*",
 ]
 
-###############################################################################
-#
-#                                   CHANGELOG
-#
-###############################################################################
-
+author_name_excludes = [
+  ".*\\[bot\\].*",
+]
 
 [tool.git-cliff.changelog]
 header = """
@@ -617,174 +612,92 @@ header = """
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
-{%- macro remote_url() -%}
-  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{#- "true" if commit has PR labels (with/without label) and matching author -#}
+{%- macro matches(commit, label="", contains=true, bot="ignore") -%}
+  {%- set labels = commit.remote.pr_labels | default(value=[]) -%}
+  {%- set is_bot = "[bot]" in commit.author.name -%}
+  {{- (not label or (labels and contains and label in labels) or (labels and not contains and label not in labels))
+    and (bot == "ignore" or (bot and is_bot) or (not bot and not is_bot)) -}}
 {%- endmacro -%}
 
-{%- if version -%}
-  {% if previous.version %}
-    # [{{ version | trim_start_matches(pat="v") }}]({{ self::remote_url() }}/compare/{{ previous.version }}..{{ version }}) \
-    - {{ timestamp | date(format="%Y-%m-%d") }} \
-    ([vs HEAD]({{ self::remote_url() }}/compare/{{ version }}..HEAD))
-  {%- else -%}
-    # {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }} \
-    ([vs HEAD]({{ self::remote_url() }}/compare/{{ version }}..HEAD))
-  {%- endif %}
-{%- else -%}
-# Untagged ([vs HEAD]({{ self::remote_url() }}/compare/..HEAD))
+{%- macro count(commits, label="", contains=true, bot="ignore") -%}
+  {%- set_global n = 0 -%}
+  {%- for commit in commits -%}
+    {%- set match = self::matches(commit=commit, label=label, contains=contains, bot=bot) -%}
+    {%- if match == "true" -%}{%- set_global n = n + 1 -%}{%- endif -%}
+  {%- endfor -%}
+  {{- n -}}
+{%- endmacro -%}
+
+{%- macro display(commits, header, python, labels, url, bot=false, display_group=false) -%}
+  {%- set n = self::count(commits=commits, label="python", contains=python, bot=bot) -%}
+  {%- if n != "0" %}
+
+### {{ header }} ({{ n }} commits)
+{% endif -%}
+  {%- for commit in commits -%}
+    {%- set match = self::matches(commit=commit, label="python", contains=python, bot=bot) -%}
+    {%- if match == "true" %}
+- {% if display_group %}[{% if commit.group == "feat" %}FEATURE{% else %}FIX{% endif %}] {% endif -%}
+  {{ commit.message | split(pat="\n") | first | upper_first | trim }}
+  {%- if commit.remote.username %} (by [__@{{ commit.remote.username }}__](https://github.com/{{ commit.remote.username }}))
+  {%- elif "[bot]" in commit.author.name %} (by __@{{ commit.author.name }}__ [BOT])
+  {%- elif commit.author.name %} (by __@{{ commit.author.name }}__)
+  {%- endif -%}
+  {%- if commit.remote.pr_number %} ([#{{ commit.remote.pr_number }}]({{ url }}/pull/{{ commit.remote.pr_number }})){% endif -%}
+  {%- for label in commit.remote.pr_labels | default(value=[]) -%}
+    {%- if label in labels %} [{{ label | upper }}]{% endif -%}
+  {%- endfor -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endmacro -%}
+
+{%- set url = "https://github.com/" ~ remote.github.owner ~ "/" ~ remote.github.repo %}
+{% if version -%}
+  {%- set name = version | trim_start_matches(pat="v") -%}
+  {%- if previous.version %}{% set name = "[" ~ name ~ "](" ~ url ~ "/compare/" ~ previous.version ~ ".." ~ version ~ ")" %}{% endif %}
+# {{ name }} - {{ timestamp | date(format="%Y-%m-%d") }} ([vs HEAD]({{ url }}/compare/{{ version }}..HEAD))
+{%- else %}
+# Untagged ([vs HEAD]({{ url }}/compare/..HEAD))
 {%- endif %}
 
 __Commits by type__
 
-{% set total = commits | length -%}
-
-{%- set human = self::count_commits(commits=commits, bot=false) -%}
-{%- set bot = self::count_commits(commits=commits, bot=true) -%}
-
-{%- set python = self::count_commits(commits=commits, label="python") -%}
-{%- set other = self::count_commits(commits=commits, label="python", contains=false) -%}
-
+{% set human = self::count(commits=commits, bot=false) -%}
+{%- set bots = self::count(commits=commits, bot=true) -%}
+{%- set py = self::count(commits=commits, label="python") -%}
+{%- set other = self::count(commits=commits, label="python", contains=false) -%}
 Total | Human | Bots | Python | Other
-:---: | :---: | :---:|  :---: | :---:
-{{ total }} | {{ human }} | {{ bot }} | {{ python }} | {{ other }}
+:---: | :---: | :---: | :---: | :---:
+{{ commits | length }} | {{ human }} | {{ bots }} | {{ py }} | {{ other }}
 
 __Commits by labels__
 
-{% set security = self::count_commits(commits=commits, label="security") -%}
-{%- set tests = self::count_commits(commits=commits, label="tests") -%}
-{%- set legal = self::count_commits(commits=commits, label="legal") -%}
-{%- set docs = self::count_commits(commits=commits, label="docs") -%}
-{%- set actions = self::count_commits(commits=commits, label="actions") -%}
-{%- set deps = self::count_commits(commits=commits, label="deps") -%}
-{%- set config = self::count_commits(commits=commits, label="config") -%}
+{% set labels = ["security", "tests", "legal", "docs", "actions", "config", "deps"] -%}
+Security | Tests | Legal | Docs | Actions | Config | Dependencies
+:---: | :---: | :---: | :---: | :---: | :---: | :---:
+{% for label in labels %}{{ self::count(commits=commits, label=label) }}{% if not loop.last %} | {% endif %}{% endfor %}
 
-Security | Tests | Legal | Docs | Actions | Config | Dependencies |
-  :---:  | :---: | :---: | :---:|  :---:  |  :---: |    :---:     |
-{{ security }} | {{ tests }} | {{ legal }} | {{ docs }} | {{ actions }} | {{ config }} | {{ deps }}
+{%- set repositories = get_env(name="PACKAGE_REPOSITORIES", default="") | trim -%}
+{%- set package_version = get_env(name="PYTHON_PACKAGE_VERSION", default="") -%}
+{%- for python in [true, false] -%}
+  {%- set n = self::count(commits=commits, label="python", contains=python) -%}
+  {%- if n != "0" %}
 
-{% set python_data = [python, "Python", true, get_env(name="PYTHON_PACKAGE_VERSION", default="")] -%}
-{%- set other_data = [other, "Other", false, ""] -%}
-{%- set data = [python_data, other_data] -%}
+## {% if python %}Python ({% if package_version %}v{{ package_version }}, {% endif %}{% else %}Other ({% endif %}{{ n }} commits)
+    {%- if python and repositories %}
 
-{%- for item in data%}
-  {%- if item[0] != "0" -%}
-    ## {{ item[1] }} ({% if item[3] %}v{{ item[3] }}, {% endif %}{{ item[0] }} commits)
-    {{- self::display(
-      commits=commits | filter(attribute="breaking", value=true),
-      header="Breaking changes",
-      python=item[2],
-      display_group=true,
-    )-}}
-    {{- self::display(
-      commits=commits | filter(attribute="breaking", value=false) | filter(attribute="group", value="feat"),
-      header="Features",
-      python=item[2],
-    )-}}
-    {{- self::display(
-      commits=commits | filter(attribute="breaking", value=false) | filter(attribute="group", value="fix"),
-      header="Fixes",
-      python=item[2],
-    )-}}
-    {{- self::display(
-      commits=commits,
-      header="Bots",
-      python=item[2],
-      display_group=true,
-      bot=true,
-    )-}}
-  {% endif -%}
-{% endfor %}
+### Repositories
 
-{%- macro count_commits(commits, label=false, bot="ignore", contains=true) -%}
-  {% set counter = 0 %}
-  {%- for commit in commits %}
-    {%- if
-      (
-        not label or
-        (
-          (contains and commit.remote.pr_labels and label in commit.remote.pr_labels)
-          or
-          (not contains and commit.remote.pr_labels and label not in commit.remote.pr_labels)
-        )
-      )
-      and
-      (
-        bot == "ignore"
-        or
-        (not bot and not "[bot]" in commit.author.name)
-        or
-        (bot and "[bot]" in commit.author.name)
-      )
-    -%}
-      {%- set_global counter = counter + 1 -%}
+{{ repositories }}
     {%- endif -%}
-  {%- endfor -%}
-  {{- counter -}}
-{%- endmacro -%}
-
-{%- macro display(commits, header, python, bot=false, display_group=false) -%}
-  {%- set n_commits = self::count_commits(
-    commits=commits,
-    label="python",
-    bot=bot,
-    contains=python,
-  ) -%}
-  {%- if n_commits != "0" %}
-
-    ### {{ header }} ({{ n_commits }} commits)
-
-  {% endif -%}
-  {%- for commit in commits -%}
-    {%- if
-      (
-        python == "ignore"
-        or
-        (python and commit.remote.pr_labels and "python" in commit.remote.pr_labels)
-        or
-        (not python and commit.remote.pr_labels and "python" not in commit.remote.pr_labels)
-      )
-      and
-      (
-        bot == "ignore"
-        or
-        (bot and "[bot]" in commit.author.name)
-        or
-        (not bot and not "[bot]" in commit.author.name)
-      )
-    -%}
-      - \
-      {% if display_group -%}
-        {% if commit.group == "feat" -%}[FEATURE] \
-        {% elif commit.group == "fix" -%}[FIX] \
-        {% else -%}[?] \
-        {% endif -%}
-      {%- endif -%}
-      {{ commit.message | split(pat="\n") | first | upper_first | trim }} \
-      {% if commit.remote.username -%}
-        (by [__@{{ commit.remote.username }}__](https://github.com/{{ commit.remote.username }})) \
-      {% elif "[bot]" in commit.author.name -%}
-        (by __@{{ commit.author.name }}__ [BOT]) \
-      {% elif commit.author.name -%}
-        (by __@{{ commit.author.name }}__) \
-      {% endif -%}
-      {% if commit.remote.pr_number -%}
-        ([#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}))
-      {%- endif %}
-      {%- if commit.remote.pr_labels and commit.remote.pr_labels | length > 0 %}
-        {%- for label in commit.remote.pr_labels -%}
-          {%- if label == "security" %} [SECURITY]
-          {%- elif label == "tests" %} [TESTS]
-          {%- elif label == "legal" %} [LEGAL]
-          {%- elif label == "docs" %} [DOCS]
-          {%- elif label == "actions" %} [ACTIONS]
-          {%- elif label == "config" %} [CONFIG]
-          {%- elif label == "deps" %} [DEPS]
-          {%- endif -%}
-        {%- endfor %}
-      {%- endif %}
-    {%- endif %}
-  {% endfor -%}
-{%- endmacro -%}
+    {%- set non_breaking = commits | filter(attribute="breaking", value=false) -%}
+    {{- self::display(commits=commits | filter(attribute="breaking", value=true), header="Breaking changes", python=python, labels=labels, url=url, display_group=true) -}}
+    {{- self::display(commits=non_breaking | filter(attribute="group", value="feat"), header="Features", python=python, labels=labels, url=url) -}}
+    {{- self::display(commits=non_breaking | filter(attribute="group", value="fix"), header="Fixes", python=python, labels=labels, url=url) -}}
+    {{- self::display(commits=commits, header="Bots", python=python, labels=labels, url=url, bot=true, display_group=true) -}}
+  {%- endif -%}
+{%- endfor %}
 """
 
 footer = ""
@@ -807,392 +720,40 @@ topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
 
-###############################################################################
-#
-#                               SCRIPTS
-#
-###############################################################################
+[tool.poe]
+# Tasks run in the environment set up by `uv run` (or uv-setup action in CI)
+executor.type = "simple"
 
-[tool.pdm.scripts]
+[tool.poe.tasks]
 
 ###############################################################################
 #
-#                             SCRIPTS.TEST
+#                               TESTING
 #
 ###############################################################################
 
-tests = { composite = [
-  "pdm run refresh",
-  "pdm run coverage run -m pytest -x --pretty {args:tests}",
-  "pdm run coverage report",
+# SEED (random in CI, see reproducibility-setup action) seeds all randomness
+# ./ makes --pyargs treat tests and docs as paths, comver is the installed package
+tests-coverage = { sequence = [
+  { cmd = "python -X dev -m coverage run -m pytest -vv -x --pretty --doctest-modules --pyargs ${paths:-./tests ./docs comver}" },
+  { cmd = "coverage report" },
+], args = [
+  { name = "paths", positional = true, multiple = true },
+], env = { PYTHONHASHSEED = "${SEED:-0}", PYTEST_ADDOPTS = "--randomly-seed=${SEED:-0} --hypothesis-seed=${SEED:-0}" } }
+# Slow, hence run on demand only (not in CI or prek)
+# mutmut disables pytest-randomly (unknown --randomly-seed)
+tests-mutation = { cmd = ".github/tools/tests-mutation.sh", env = { PYTHONHASHSEED = "${SEED:-0}", PYTEST_ADDOPTS = "--hypothesis-seed=${SEED:-0}" } }
+env-tests = { shell = """
+  export UV_PROJECT_ENVIRONMENT="${POE_ROOT}/.venvs/${python}"
+  # Outer `uv run` sets VIRTUAL_ENV to .venv, nested uv would warn on mismatch
+  export VIRTUAL_ENV="${UV_PROJECT_ENVIRONMENT}"
+  uv sync --python "${python}" --no-editable --all-extras --no-default-groups --group dev-tests --group dev-tasks \
+    && if [ -n "${task}" ]; then uv run --no-sync --python "${python}" poe ${task}; fi
+""", args = [
+  { name = "python", options = ["--python"], required = true },
+  { name = "task", positional = true, multiple = true },
 ] }
-
-tests-all = { composite = [
-  #
-  #           DO NOT EDIT UNTIL end marker
-  #
-  # Note: We start with the latest Python version to ensure the oldest one
-  # is the one that is used after any pipeline
-  #
-  # [[[cog
-  # import cog
-  # import cogeol
-  #
-  # for version in cogeol.scientific():
-  #     cycle = version["cycle"]
-  #     cog.outl(f'  "pdm use {cycle}",')
-  #     cog.outl(
-  #         '  "pdm run tests {args:tests}",'
-  #     )
-  # ]]]
-  "pdm use 3.14",
-  "pdm run tests {args:tests}",
-  "pdm use 3.13",
-  "pdm run tests {args:tests}",
-  "pdm use 3.12",
-  "pdm run tests {args:tests}",
-  # [[[end]]] (sum: l+CVH9xxZS)
-] }
-
-###############################################################################
-#
-#                              SCRIPTS.PYTHON
-#
-###############################################################################
-
-check-python = { composite = [
-  "fawltydeps --detailed --code {args:.}",
-  "ruff format --check {args:.}",
-  "ruff check {args:.}",
-  "interrogate {args:.}",
-] }
-
-fix-python = { composite = [
-  "fawltydeps --detailed --code {args:.}",
-  "ruff format {args:.}",
-  "ruff check --fix {args:.}",
-  "interrogate {args:.}",
-] }
-
-###############################################################################
-#
-#                              SCRIPTS.TYPING
-#
-###############################################################################
-
-check-typing = "basedpyright --stats {args:src tests}"
-
-###############################################################################
-#
-#                               SCRIPTS.SHELL
-#
-###############################################################################
-
-check-shell = "shellcheck -x -S style -o all"
-
-fix-shell = { shell = "pdm run shellcheck -x -S style -o all {args} | git apply --allow-empty" }
-
-###############################################################################
-#
-#                               SCRIPTS.YAML
-#
-###############################################################################
-
-check-yaml = { composite = [
-  "yamllint {args:.}",
-] }
-
-###############################################################################
-#
-#                              SCRIPTS.MARKDOWN
-#
-###############################################################################
-
-# @ is ignored for version pinning in pyproject.toml (as seen in cffconvert)
-# issues and blob are ignored as the repo might be private and unreachable
-check-markdown = { composite = [
-  "mdformat --check {args:.}",
-  "pymarkdownlnt scan -r {args:.}",
-  "md-dead-link-check {args:.}",
-] }
-
-fix-markdown = { composite = [
-  # Fix to exclude given files
-  "mdformat {args:.}",
-  "pymarkdownlnt fix -r {args:.}",
-  "pymarkdownlnt scan -r {args:.}",
-  "md-dead-link-check {args:.}",
-] }
-
-###############################################################################
-#
-#                             SCRIPTS.INI
-#
-###############################################################################
-
-check-ini = "pyinilint"
-
-###############################################################################
-#
-#                           SCRIPTS.PYPROJECT
-#
-###############################################################################
-
-check-pyproject = { composite = [
-  "validate-pyproject {args:pyproject.toml}",
-] }
-
-###############################################################################
-#
-#                            SCRIPTS.CITATION
-#
-###############################################################################
-
-check-citation = "cffconvert --validate -i {args:CITATION.cff}"
-
-###############################################################################
-#
-#                             SCRIPTS.CODE
-#
-###############################################################################
-
-check-code = { composite = [
-  "codespell {args:.}",
-  "ec",
-] }
-
-fix-code = { composite = [
-  "codespell --write-changes {args:.}",
-  "ec",
-] }
-
-###############################################################################
-#
-#                              SCRIPTS.DOCS
-#
-###############################################################################
-
-check-docs = "mkdocs build"
-
-###############################################################################
-#
-#                            SCRIPTS.PRE-COMMIT
-#
-###############################################################################
-
-check-pre-commit-config = "pre-commit validate-config {args:.pre-commit-config.yaml}"
-check-pre-commit-hooks = "pre-commit validate-manifest {args:.pre-commit-hooks.yaml}"
-
-###############################################################################
-#
-#                              SCRIPTS.SECURITY
-#
-###############################################################################
-
-check-security = { cmd = [
-  "semgrep",
-  "scan",
-  "--config=p/python",
-  "--config=p/secrets",
-  "--config=p/security-audit",
-  "--config=p/ci",
-  "--config=p/github-actions",
-  "--config=p/bandit",
-  "--config=p/gitleaks",
-  "--error",
-  "--metrics=off",
-  "--severity=INFO",
-  "--strict",
-  "{args:.}",
-] }
-
-###############################################################################
-#
-#                         SCRIPTS.RENOVATE (GH ACTIONS)
-#
-###############################################################################
-
-check-renovate = { cmd = [
-  "check-jsonschema",
-  "--builtin-schema",
-  "vendor.renovate",
-  "{args:./.github/renovate.json}",
-] }
-
-###############################################################################
-#
-#                         SCRIPTS.ACTIONS (GH ACTIONS)
-#
-###############################################################################
-
-check-github-actions = { composite = [
-  "check-jsonschema --verbose --builtin-schema vendor.github-actions",
-] }
-
-###############################################################################
-#
-#                         SCRIPTS.WORKFLOWS (GH ACTIONS)
-#
-###############################################################################
-
-check-github-workflows = { composite = [
-  "check-jsonschema --verbose --builtin-schema github-workflows-require-timeout",
-  "check-jsonschema --verbose --builtin-schema github-workflows",
-] }
-
-###############################################################################
-#
-#                   SCRIPTS.GITHUB (GH ACTIONS + GH WORKFLOWS)
-#
-###############################################################################
-
-check-github = "zizmor --persona auditor --verbose {args:.}"
-
-###############################################################################
-#
-#                               SCRIPTS.LEGAL
-#
-###############################################################################
-
-check-legal = "reuse lint"
-
-# See here: https://github.com/pdm-project/pdm/issues/2937
-fix-legal = { shell = """
-  bash -c \
-  "pdm run reuse annotate \
-    --license='$(basename $(readlink -f LICENSE.md) .txt)' \
-    --copyright='open-nudge <https://github.com/open-nudge>' \
-    --contributor='$(git config get user.name) <$(git config get user.email)>' \
-    --copyright-prefix=spdx-symbol \
-    --merge-copyrights \
-    --recursive \
-    --fallback-dot-license \
-  {args:.}"
-""" }
-
-###############################################################################
-#
-#                              SCRIPTS.GENERATION
-#
-###############################################################################
-
-check-generation = { cmd = [
-  "cog",
-  "-c",
-  "--check",
-  """{args:
-  pyproject.toml
-  ./.github/workflows/cache-item-reusable.yml
-  ./.github/workflows/cache-reusable.yml
-  ./.github/workflows/run-reusable.yml
-  ./.github/workflows/tests-reusable.yml
-  ./.github/workflows/release-sbom-attest-reusable.yml
-  ./.github/workflows/release-sbom-run-reusable.yml
-  ./.github/workflows/release-sboms-reusable.yml
-  }
-  """,
-] }
-
-fix-generation = { cmd = [
-  "cog",
-  "-c",
-  "-r",
-  """{args:
-  pyproject.toml
-  ./.github/workflows/cache-item-reusable.yml
-  ./.github/workflows/cache-reusable.yml
-  ./.github/workflows/run-reusable.yml
-  ./.github/workflows/tests-reusable.yml
-  ./.github/workflows/release-sbom-attest-reusable.yml
-  ./.github/workflows/release-sbom-run-reusable.yml
-  ./.github/workflows/release-sboms-reusable.yml
-  }
-  """,
-] }
-
-
-###############################################################################
-#
-#                         SCRIPTS.ALL (CONVENIENCE)
-#
-###############################################################################
-
-check-all = { composite = [
-  "check-generation",
-  "check-citation",
-  "check-markdown",
-  "check-yaml",
-  "check-pre-commit",
-  "check-pyproject",
-  "check-legal",
-  "check-workflows",
-  "check-security",
-  "check-docs",
-  "check-python",
-] }
-
-fix-all = { composite = [
-  "fix-generation",
-  "check-citation",
-  "fix-markdown",
-  "check-yaml",
-  "check-pre-commit",
-  "fix-pyproject",
-  "fix-legal",
-  "check-legal",
-  "check-workflows",
-  "check-security",
-  "check-docs",
-  "fix-python",
-] }
-
-###############################################################################
-#
-#                               SCRIPTS.SETUP
-#
-###############################################################################
-
-lock = "pdm lock -G:all"
-
-refresh = { composite = [
-  "pdm install --prod -G:all --no-editable",
-  "pdm install -G dev-tests --no-editable",
-] }
-
-setup = { composite = [
-  "pdm self update",
-  #
-  #           DO NOT EDIT UNTIL end marker
-  #
-  # [[[cog
-  # import cog
-  # import cogeol
-  #
-  # for version in cogeol.scientific():
-  #     cycle = version["cycle"]
-  #     cog.outl(f'  "pdm python install {cycle}",')
-  # ]]]
-  "pdm python install 3.14",
-  "pdm python install 3.13",
-  "pdm python install 3.12",
-  # [[[end]]] (sum: EKFElxllOV)
-  #
-  #           DO NOT EDIT UNTIL end marker
-  #
-  # [[[cog
-  # import cog
-  # import cogeol
-  #
-  # for version in cogeol.scientific()[:-1]:
-  #     cycle = version["cycle"]
-  #     cog.outl(f'  "pdm use {cycle}",')
-  #     cog.outl(f'  "pdm run refresh",')
-  # ]]]
-  "pdm use 3.14",
-  "pdm run refresh",
-  "pdm use 3.13",
-  "pdm run refresh",
-  # [[[end]]] (sum: /IUGZwEqDU)
+tests = { sequence = [
   #
   #           DO NOT EDIT UNTIL end marker
   #
@@ -1201,155 +762,289 @@ setup = { composite = [
   # import cogeol
   #
   # cycle = cogeol.scientific()[-1]["cycle"]
-  # cog.outl(f'  "pdm use {cycle}",')
+  # cog.outl(f'  {{ ref = "env-tests --python {cycle} tests-coverage ${{paths}}" }},')
   # ]]]
-  "pdm use 3.12",
-  # [[[end]]] (sum: VskYZaUrei)
-  "pdm install -G:all --no-editable",
-  "pdm run pre-commit install --install-hooks",
+  { ref = "env-tests --python 3.13 tests-coverage ${paths}" },
+  # [[[end]]] (sum: Zkn36EfiD3)
+], args = [
+  { name = "paths", positional = true, multiple = true },
+] }
+tests-all = { sequence = [
+  #
+  #           DO NOT EDIT UNTIL end marker
+  #
+  # [[[cog
+  # import cog
+  # import cogeol
+  #
+  # for version in cogeol.scientific():
+  #     cycle = version["cycle"]
+  #     cog.outl(f'  {{ ref = "env-tests --python {cycle} tests-coverage ${{paths}}" }},')
+  # ]]]
+  { ref = "env-tests --python 3.15 tests-coverage ${paths}" },
+  { ref = "env-tests --python 3.14 tests-coverage ${paths}" },
+  { ref = "env-tests --python 3.13 tests-coverage ${paths}" },
+  # [[[end]]] (sum: owIUorTnyg)
+], args = [
+  { name = "paths", positional = true, multiple = true },
 ] }
 
 ###############################################################################
 #
-#                         PRE-COMMIT CHECKS ALIASES
+#                           CHECKS AND FIXERS
 #
 ###############################################################################
 
-pre-commit-all = "pre-commit run {args:''} --all-files"
+check-python = { sequence = [
+  { cmd = "ruff format --check ${files:-.}" },
+  { cmd = "ruff check ${files:-.}" },
+  { cmd = "pynudger check ${files}" },
+  { cmd = "interrogate ${files:-.}" },
+  { cmd = "noqaexplain check ${files:-src tests docs/scripts}" },
+], args = [
+  { name = "files", positional = true, multiple = true },
+] }
+fix-python = { sequence = [
+  { cmd = "ruff format ${files:-.}" },
+  { cmd = "ruff check --fix ${files:-.}" },
+  { cmd = "pynudger check ${files}" },
+  { cmd = "interrogate ${files:-.}" },
+  { cmd = "noqaexplain check ${files:-src tests docs/scripts}" },
+], args = [
+  { name = "files", positional = true, multiple = true },
+] }
 
-###############################################################################
-#
-#                             SCRIPTS.SBOM
-#
-###############################################################################
-
-# Check here for syntax:
-sbom-python = { shell = """
-  bash -c \
-  'pdm run cyclonedx-py environment $(pdm info --python) \
-    --mc-type library'
+# Type checks the installed (non-editable) package, not src, and the code using it:
+# runs in the test environment (env-tests), whose interpreter pyrefly picks up,
+# disabled search path heuristics (src) resolve imports from its site-packages
+check-typing = { sequence = [
+  #
+  #           DO NOT EDIT UNTIL end marker
+  #
+  # [[[cog
+  # import cog
+  # import cogeol
+  #
+  # cycle = cogeol.scientific()[-1]["cycle"]
+  # cog.outl(f'  {{ ref = "env-tests --python {cycle} typing-installed" }},')
+  # ]]]
+  { ref = "env-tests --python 3.13 typing-installed" },
+  # [[[end]]] (sum: F8Raasa4Ie)
+] }
+# Run via check-typing (needs the non-editable test environment),
+# flag is not in [tool.pyrefly] so mutmut type checks mutated src
+typing-installed = { shell = """
+  pyrefly check --disable-search-path-heuristics tests docs/scripts \
+    "$(python -P -c 'import comver; print(comver.__path__[0])')"
 """ }
+
+check-shell = { sequence = [
+  { cmd = "shellcheck -x -S style -o all ${files}" },
+  { cmd = "noqaexplain check ${files}" },
+], args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+fix-shell = { shell = "shellcheck -x -S style -o all ${files} | git apply --allow-empty", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+check-yaml = { sequence = [
+  { cmd = "yamllint ${files:-.}" },
+  { cmd = "noqaexplain check ${files}" },
+], args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+
+# @ is ignored for version pinning in pyproject.toml (as seen in cffconvert)
+# issues and blob are ignored as the repo might be private and unreachable
+check-markdown = "bash .github/tools/markdown.sh check"
+fix-markdown = "bash .github/tools/markdown.sh fix"
+
+check-ini = "pyinilint"
+
+check-pyproject = { cmd = "validate-pyproject ${files:-pyproject.toml}", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+check-citation = { cmd = "check-jsonschema --verbose --builtin-schema vendor.citation-file-format ${files:-CITATION.cff}", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+check-docs = "mkdocs build"
+
+check-prek-config = { cmd = "prek validate-config ${files:-prek.toml}", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+# Skipped when no files are passed and the default manifest does not exist
+check-prek-hooks = { shell = """
+  if [ -n "${files}" ] || [ -f .pre-commit-hooks.yaml ]; then
+    prek validate-manifest ${files:-.pre-commit-hooks.yaml}
+  fi
+""", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+# Scripts below are (mostly) separated from prek-hooks to group them semantically
+# This approach allows comver to run prek checks directly
+
+# See definitions and specification here:
+# https://github.com/prek/prek-hooks/blob/main/.prek-hooks.yaml
+
+check-text = "bash .github/tools/text.sh check"
+fix-text = "bash .github/tools/text.sh fix"
+
+check-json = "prek run check-json --files"
+
+check-json5 = "prek run check-json5 --files"
+
+check-toml = "prek run check-toml --files"
+
+check-xml = "prek run check-xml --files"
+
+check-github-actions = "check-jsonschema --verbose --builtin-schema vendor.github-actions"
+
+check-github-workflows = { sequence = [
+  { cmd = "check-jsonschema --verbose --builtin-schema github-workflows-require-timeout ${files}" },
+  { cmd = "check-jsonschema --verbose --builtin-schema github-workflows ${files}" },
+], args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+check-github = { cmd = "zizmor --persona auditor --verbose", cwd = "${POE_PWD}" }
+
+check-legal = "reuse lint"
+fix-legal = { shell = """
+  reuse annotate \
+    --license="$(.github/tools/license.sh)" \
+    --copyright='open-nudge <https://github.com/open-nudge>' \
+    --contributor="$(git config get user.name) <$(git config get user.email)>" \
+    --copyright-prefix=spdx-symbol \
+    --merge-copyrights \
+    --recursive \
+    --fallback-dot-license \
+  ${files:-.}
+""", args = [
+  { name = "files", positional = true, multiple = true },
+] }
+
+# Known vulnerabilities in uv.lock (all groups), ignores in [tool.uv.audit]
+check-audit = "uv audit --frozen --preview-features audit-command"
+
+check-generation = { shell = ".github/tools/find-cog-files.sh | xargs -0 -r cog -c --check" }
+fix-generation = { shell = ".github/tools/find-cog-files.sh | xargs -0 -r cog -c -r" }
+
+fix-all = "prek run --all-files"
+
+# Used by the commit-msg prek hook
+check-commit = "conventional-pre-commit --strict --scopes '' feat fix feat! fix!"
+
+###############################################################################
+#
+#                 NON-CHECKS (setup, sboms, changelogs etc.)
+#
+###############################################################################
+
+setup = { sequence = [
+  # Project environment (.venv): everything, editable (linters, docs, IDE)
+  "uv sync --all-extras",
+  # Test environments (.venvs/<python>), missing interpreters are downloaded
+  #
+  #           DO NOT EDIT UNTIL end marker
+  #
+  # [[[cog
+  # import cog
+  # import cogeol
+  #
+  # for version in cogeol.scientific():
+  #     cycle = version["cycle"]
+  #     cog.outl(f'  {{ ref = "env-tests --python {cycle}" }},')
+  # ]]]
+  { ref = "env-tests --python 3.15" },
+  { ref = "env-tests --python 3.14" },
+  { ref = "env-tests --python 3.13" },
+  # [[[end]]] (sum: Ui9IDUjl7k)
+  "prek install --install-hooks",
+], default_item_type = "cmd" }
+
+
+# SBOM scripts assess the project in the current directory with tools
+# from the invoking environment, e.g. in CI (template tools, source project):
+# cd source && uv run --project ../template poe --directory ../template sbom-legal
+sbom-python = { shell = """
+  cyclonedx-py environment --mc-type library --output-reproducible "${UV_PROJECT_ENVIRONMENT:-.venv}"
+""", cwd = "${POE_PWD}" }
 
 sbom-legal = { shell = """
-  bash -c \
-  " pdm run reuse spdx \
+  reuse spdx \
       --add-license-concluded \
       --creator-organization='open-nudge <https://github.com/open-nudge>' \
-      --creator-person='$(git config get user.name) <$(git config get user.email)>' \
+      --creator-person="$(git config get user.name) <$(git config get user.email)>" \
     > .sbom-legal.spdx \
-    && pdm run pyspdxtools \
+    && pyspdxtools \
       --version "SPDX-2.2" --novalidation \
       -i .sbom-legal.spdx -o .sbom-legal.json \
-    && ( cat .sbom-legal.json && rm .sbom-legal.spdx .sbom-legal.json )"
-""" }
+    && ( cat .sbom-legal.json && rm .sbom-legal.spdx .sbom-legal.json )
+""", cwd = "${POE_PWD}" }
 
-sbom-all = { composite = [
+# Pinned GitHub Actions used by .github (and ${SBOM_ACTIONS_EXTRA} directories)
+sbom-actions = { shell = '''
+grep -rhoE 'uses:[[:space:]]*"?[[:alnum:]_-][^"[:space:]#]*@[^"[:space:]#]+' \
+  .github ${SBOM_ACTIONS_EXTRA} \
+  | sed -E 's/^uses:[[:space:]]*"?//' \
+  | sort -u \
+  | jq -Rn --arg epoch "${SOURCE_DATE_EPOCH:-}" '{
+      bomFormat: "CycloneDX",
+      specVersion: "1.6",
+      version: 1,
+      metadata: {
+        timestamp: (if $epoch == "" then now else ($epoch | tonumber) end | todate)
+      },
+      components: [
+        inputs
+        | if startswith("docker://") then
+            ltrimstr("docker://")
+            | capture("^(?<name>[^:@]+)(:[^@]+)?@(?<version>.+)$")
+            | .purl = "pkg:docker/\(.name)@\(.version | sub(":"; "%3A"))"
+            | .type = "container"
+          else
+            capture("^(?<name>[^@]+)@(?<version>.+)$")
+            | (.name | split("/")) as $path
+            | .purl = "pkg:github/\($path[:2] | join("/"))@\(.version)"
+              + if $path[2:] == [] then "" else "#\($path[2:] | join("/"))" end
+            | .type = "application"
+          end
+      ]
+    }'
+''', cwd = "${POE_PWD}" }
+
+sbom-all = { sequence = [
   "sbom-python",
   "sbom-legal",
+  "sbom-actions",
 ] }
 
-###############################################################################
-#
-#                             SCRIPTS.CHANGELOG
-#
-###############################################################################
+changelog = "git-cliff"
+changelog-latest = "git-cliff --latest"
 
-changelog = { cmd = "pdm run git-cliff" }
-changelog-latest = { cmd = "pdm run git-cliff --latest" }
-
-###############################################################################
-#
-#                              SCRIPTS.RELEASE
-#
-###############################################################################
-
-check-release = { composite = [
+check-release = { sequence = [
   "sbom-all",
   "changelog",
   "changelog-latest",
-  "pdm build",
+  "build-dist",
 ] }
 
+build-dist = { shell = 'SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}" uv build' }
+
 ###############################################################################
 #
-#                         COMMITTING (move to comver later)
+#                             AGENTIC WORKFLOWS
 #
 ###############################################################################
 
-check-commit = "conventional-pre-commit --strict --scopes '' feat fix feat! fix!"
-
-# Manual testing
-commit = { shell = """
-echo "By committing to this repository, you agree to the Developer Certificate of Origin (DCO)."
-printf "See here: https://developercertificate.org/ for more information.\n"
-git commit --signoff --gpg-sign
-""" }
-
-# Manual testing
-commit-type = { shell = """
-echo "By committing to this repository, you agree to the Developer Certificate of Origin (DCO)."
-printf "See here: https://developercertificate.org/ for more information.\n"
-
-options=("fix" "feat" "fix!" "feat!")
-PS3="Select commit type (1-4) or Quit (5): "
-select opt in "${options[@]}" "Quit"; do
-    case "$REPLY" in
-    1) break;;
-    2) break;;
-    3) break;;
-    4) break;;
-    5) exit 0; break;;
-    *) echo "Invalid option."; continue;;
-    esac
-done
-
-read -r -p "\nCommit title message: " title
-
-echo "\nYour commit will be: '$opt: $title'\n"
-
-git commit -S --signoff -m "$opt: $title"
-""" }
-
-# Manual testing
-commit-guided = { shell = """
-echo "By committing to this repository, you agree to the Developer Certificate of Origin (DCO)."
-printf "See here: https://developercertificate.org/ for more information.\n"
-
-echo "Please provide commit type (one of fix/feat/fix!/feat!):"
-echo "- fix: A bug fix (not breaking backward compatibility)."
-echo "- feat: A new feature (not breaking backward compatibility)."
-echo "- fix!: A bug fix (breaking backward compatibility)."
-echo "- feat!: A new feature (breaking backward compatibility)."
-echo ""
-
-options=("fix" "feat" "fix!" "feat!")
-PS3="Select commit type (1-4) or Quit (5): "
-select opt in "${options[@]}" "Quit"; do
-    case "$REPLY" in
-    1) break;;
-    2) break;;
-    3) break;;
-    4) break;;
-    5) exit 0; break;;
-    *) echo "Invalid option.";continue;;
-    esac
-done
-
-printf "\nYou picked %s type.\n" "$opt"
-
-echo "Please provide commit title message:"
-echo "- Use the imperative, present tense: 'change' not 'changed' nor 'changes'"
-echo "- Short (72 chars or less) informative summary of changes"
-echo "- Lowercase"
-echo "- No dot at the end\n"
-echo "Example: 'add performance tests'\n"
-
-read -r -p "Commit title message: " title
-
-echo "\nYour commit will be: '$opt: $title'\n"
-
-read -p "Would you like to make this commit? (Y/N): " \
-  confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-
-git commit -S --signoff -m "$opt: $title"
-""" }
+[tool.poe.tasks.harness]
+shell = """\
+  prek run --color never --show-diff-on-failure --no-progress --quiet --files \
+  $(git diff --name-only --cached; git diff --name-only; git ls-files --others --exclude-standard)
+"""
