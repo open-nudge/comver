@@ -7,8 +7,10 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 import shutil
+import stat
 import tempfile
 import typing
 import uuid
@@ -70,6 +72,31 @@ def repository(draw: st.DrawFn, *, n_commits: int = 10) -> tuple[str, CommitType
         commit_types.append(commit_type)
 
     return f"{directory}", commit_types
+
+
+def _writable(function: Callable[[str], object], path: str, exception: BaseException) -> None:
+    """Make `path` writable and retry its removal (`shutil.rmtree` handler).
+
+    `git` stores objects as read-only files, which Windows refuses
+    to delete (`PermissionError: [WinError 5] Access is denied`).
+
+    Args:
+        function:
+            Function which failed to remove `path` (e.g. `os.unlink`).
+        path:
+            Path which could not be removed.
+        exception:
+            Exception raised by `function`.
+
+    Raises:
+        BaseException:
+            Original `exception` if it is not a `PermissionError`.
+
+    """
+    if not isinstance(exception, PermissionError):
+        raise exception
+    pathlib.Path(path).chmod(stat.S_IWRITE)
+    _ = function(path)
 
 
 def _hatchling(*, repository: str, **kwargs: Strings | None) -> str:
@@ -167,7 +194,7 @@ def test_plugin(  # noqa: PLR0913
         author_email_excludes=author_email_excludes,
         repository=repository,
     )
-    shutil.rmtree(repository)
+    shutil.rmtree(repository, onexc=_writable)
 
     # Every commit changes the same file, hence path_excludes excludes them all
     excluded = author_name_excludes or author_email_excludes or message_excludes or path_excludes
@@ -222,3 +249,32 @@ def test_set_version(tmp_path: pathlib.Path) -> None:
     source = comver.plugin.ComverVersionSource(root=f"{tmp_path}", config={})
     with pytest.raises(NotImplementedError):
         source.set_version("1.0.0", {})
+
+
+def test_writable(tmp_path: pathlib.Path) -> None:
+    """`_writable` makes a read-only file writable and removes it.
+
+    Args:
+        tmp_path:
+            Temporary directory where the read-only file is created.
+
+    """
+    file = tmp_path / "object"
+    _ = file.write_text("content")
+    file.chmod(stat.S_IREAD)
+
+    _writable(os.unlink, f"{file}", PermissionError())
+
+    assert not file.exists()
+
+
+def test_writable_reraise(tmp_path: pathlib.Path) -> None:
+    """`_writable` re-raises errors other than `PermissionError`.
+
+    Args:
+        tmp_path:
+            Temporary directory containing the (missing) path.
+
+    """
+    with pytest.raises(FileNotFoundError):
+        _writable(os.unlink, f"{tmp_path / 'missing'}", FileNotFoundError())
