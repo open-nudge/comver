@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import os
 import pathlib
 import shutil
 import stat
@@ -54,47 +53,48 @@ def repository(draw: st.DrawFn, *, n_commits: int = 10) -> tuple[str, CommitType
         Path to the repository and types of its consecutive commits.
     """
     directory = pathlib.Path(tempfile.mkdtemp()).resolve()
-    repo = git.Repo.init(directory)
     file = directory / "file.txt"
 
     commit_types: list[str] = []
-    for _ in range(n_commits):
-        commit_type = draw(st.sampled_from(["fix", "feat", "feat!", "fix!"]))
-        author = draw(st.sampled_from(["Alice", "Bob"]))
-        email = draw(st.sampled_from(["alice@example.com", "bob@example.com"]))
+    # Closed, as its `git` processes keep the directory busy (Windows)
+    with git.Repo.init(directory) as repo:
+        for _ in range(n_commits):
+            commit_type = draw(st.sampled_from(["fix", "feat", "feat!", "fix!"]))
+            author = draw(st.sampled_from(["Alice", "Bob"]))
+            email = draw(st.sampled_from(["alice@example.com", "bob@example.com"]))
 
-        _ = file.write_text(f"{uuid.uuid4()}")
-        _ = repo.index.add(file)
-        _ = repo.index.commit(
-            f"{commit_type}: bla bla bla [no version]",
-            author=git.Actor(author, email),
-        )
-        commit_types.append(commit_type)
+            _ = file.write_text(f"{uuid.uuid4()}")
+            _ = repo.index.add(file)
+            _ = repo.index.commit(
+                f"{commit_type}: bla bla bla [no version]",
+                author=git.Actor(author, email),
+            )
+            commit_types.append(commit_type)
 
     return f"{directory}", commit_types
 
 
-def _writable(function: Callable[[str], object], path: str, exception: BaseException) -> None:
+# enq: Windows-only (read-only files), exercised there by test_plugin
+def _writable(  # pragma: no cover
+    function: Callable[[str], object],
+    path: str,
+    _exception: BaseException,
+) -> None:
     """Make `path` writable and retry its removal (`shutil.rmtree` handler).
 
     `git` stores objects as read-only files, which Windows refuses
     to delete (`PermissionError: [WinError 5] Access is denied`).
+    If the retry fails, its error is raised.
 
     Args:
         function:
             Function which failed to remove `path` (e.g. `os.unlink`).
         path:
             Path which could not be removed.
-        exception:
-            Exception raised by `function`.
-
-    Raises:
-        BaseException:
-            Original `exception` if it is not a `PermissionError`.
+        _exception:
+            Exception raised by `function` (unused).
 
     """
-    if not isinstance(exception, PermissionError):
-        raise exception
     pathlib.Path(path).chmod(stat.S_IWRITE)
     _ = function(path)
 
@@ -249,32 +249,3 @@ def test_set_version(tmp_path: pathlib.Path) -> None:
     source = comver.plugin.ComverVersionSource(root=f"{tmp_path}", config={})
     with pytest.raises(NotImplementedError):
         source.set_version("1.0.0", {})
-
-
-def test_writable(tmp_path: pathlib.Path) -> None:
-    """`_writable` makes a read-only file writable and removes it.
-
-    Args:
-        tmp_path:
-            Temporary directory where the read-only file is created.
-
-    """
-    file = tmp_path / "object"
-    _ = file.write_text("content")
-    file.chmod(stat.S_IREAD)
-
-    _writable(os.unlink, f"{file}", PermissionError())
-
-    assert not file.exists()
-
-
-def test_writable_reraise(tmp_path: pathlib.Path) -> None:
-    """`_writable` re-raises errors other than `PermissionError`.
-
-    Args:
-        tmp_path:
-            Temporary directory containing the (missing) path.
-
-    """
-    with pytest.raises(FileNotFoundError):
-        _writable(os.unlink, f"{tmp_path / 'missing'}", FileNotFoundError())

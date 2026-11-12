@@ -35,7 +35,7 @@ from importlib import metadata
 import git
 import loadfig
 
-from comver import _regex, error
+from comver import _regex, _repository, error
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -332,45 +332,43 @@ class Version:
             repository:
                 The `git` repository.
                 Default: Searched in the parent directories.
+                Repository opened here is closed once all versions
+                are yielded, passed `git.Repo` is left open.
 
         Yields:
             Version and its respective commit
 
         """
-        if isinstance(repository, str):
-            repository = git.Repo(repository)
-        if repository is None:
-            repository = git.Repo(search_parent_directories=True)
+        with _repository.repository(repository) as repo:
+            commits = [
+                commit
+                for commit in repo.iter_commits(reverse=True)
+                if _regex.match.commit(
+                    commit,
+                    path_includes=path_includes,
+                    path_excludes=path_excludes,
+                    author_name_includes=author_name_includes,
+                    author_name_excludes=author_name_excludes,
+                    author_email_includes=author_email_includes,
+                    author_email_excludes=author_email_excludes,
+                )
+            ]
 
-        commits = [
-            commit
-            for commit in repository.iter_commits(reverse=True)
-            if _regex.match.commit(
-                commit,
-                path_includes=path_includes,
-                path_excludes=path_excludes,
-                author_name_includes=author_name_includes,
-                author_name_excludes=author_name_excludes,
-                author_email_includes=author_email_includes,
-                author_email_excludes=author_email_excludes,
-            )
-        ]
-
-        for version, commit in zip(
-            cls.from_messages(
-                # enq: GitPython types commit messages as str | bytes
-                (str(commit.message) for commit in commits),  # noqa: PYNUDGER25
-                message_includes=message_includes,
-                message_excludes=message_excludes,
-                major_regexes=major_regexes,
-                minor_regexes=minor_regexes,
-                patch_regexes=patch_regexes,
-                unrecognized_message=unrecognized_message,
-            ),
-            commits,
-            strict=False,
-        ):
-            yield VersionCommit(version, commit)
+            for version, commit in zip(
+                cls.from_messages(
+                    # enq: GitPython types commit messages as str | bytes
+                    (str(commit.message) for commit in commits),  # noqa: PYNUDGER25
+                    message_includes=message_includes,
+                    message_excludes=message_excludes,
+                    major_regexes=major_regexes,
+                    minor_regexes=minor_regexes,
+                    patch_regexes=patch_regexes,
+                    unrecognized_message=unrecognized_message,
+                ),
+                commits,
+                strict=False,
+            ):
+                yield VersionCommit(version, commit)
 
     @classmethod
     # enq: filters are separate, optional and keyword-only options
