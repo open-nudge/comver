@@ -212,9 +212,9 @@ def test_regexes(tmp_path: pathlib.Path, plugin: Callable[..., str]) -> None:
             Plugin function
 
     """
-    repo = git.Repo.init(tmp_path)
-    for message in ("docs: add readme", "chore: update tooling"):
-        _ = repo.index.commit(message)
+    with git.Repo.init(tmp_path) as repo:
+        for message in ("docs: add readme", "chore: update tooling"):
+            _ = repo.index.commit(message)
 
     assert plugin(major_regexes=(".*",), repository=f"{tmp_path}") == "2.0.0"
 
