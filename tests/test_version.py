@@ -187,32 +187,32 @@ def test_paths(
             Version expected at each commit (in order of `commits`).
 
     """
-    repo = git.Repo.init(tmp_path)
-    for message, *paths in commits:
-        for path in paths:
-            file = tmp_path / path
-            file.parent.mkdir(parents=True, exist_ok=True)
-            _ = file.write_text(message)
-        if paths:
-            _ = repo.index.add(paths)
-        _ = repo.index.commit(message)
+    with git.Repo.init(tmp_path) as repo:
+        for message, *paths in commits:
+            for path in paths:
+                file = tmp_path / path
+                file.parent.mkdir(parents=True, exist_ok=True)
+                _ = file.write_text(message)
+            if paths:
+                _ = repo.index.add(paths)
+            _ = repo.index.commit(message)
 
-    included = {
-        output.commit.hexsha: f"{output.version}"
-        for output in comver.Version.from_git(
-            path_includes=path_includes,
-            path_excludes=path_excludes,
-            repository=repo,
-        )
-        if output.commit is not None
-    }
+        included = {
+            output.commit.hexsha: f"{output.version}"
+            for output in comver.Version.from_git(
+                path_includes=path_includes,
+                path_excludes=path_excludes,
+                repository=repo,
+            )
+            if output.commit is not None
+        }
 
-    # Excluded commits keep the version of the previous commit
-    version = "0.0.0"
-    actual: list[str] = []
-    for commit in repo.iter_commits(reverse=True):
-        version = included.get(commit.hexsha, version)
-        actual.append(version)
+        # Excluded commits keep the version of the previous commit
+        version = "0.0.0"
+        actual: list[str] = []
+        for commit in repo.iter_commits(reverse=True):
+            version = included.get(commit.hexsha, version)
+            actual.append(version)
 
     assert tuple(actual) == versions
 

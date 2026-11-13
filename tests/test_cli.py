@@ -10,18 +10,39 @@ from __future__ import annotations
 import argparse
 import typing
 
+import git
+
 import pytest
 
 from comver import _cli, _subcommand
 
+if typing.TYPE_CHECKING:
+    import pathlib
+
 # enq: pytest requires the test_ prefix, which pynudger counts as a shared word
 # noqa-file: PYNUDGER43
 
-# enq: tests verify the output of the private implementation directly
-_VERSION, _SHA, _CHECKSUM = _subcommand._calculate(  # noqa: SLF001
-    argparse.Namespace(sha=True, checksum=True, format="line"),
-).split()
-"""Current version, its commit sha and configuration checksum."""
+
+@pytest.fixture(autouse=True)
+# enq: autouse fixture is used (implicitly) by every test in this module
+def _repository(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:  # noqa: PYNUDGER37
+    """Run the CLI within a new repository with a single `feat` commit.
+
+    History of this repository cannot be used, CI checks out only
+    the (shallow) merge commit, which `[tool.comver]` may exclude
+    (e.g. if it does not change `src`), leaving no commit sha.
+
+    Args:
+        tmp_path:
+            Temporary directory where the repository is created.
+        monkeypatch:
+            Changes the working directory to the repository.
+
+    """
+    # Closed, as its `git cat-file` processes outlive the test otherwise
+    with git.Repo.init(tmp_path) as repo:
+        _ = repo.index.commit("feat: add feature")
+    monkeypatch.chdir(tmp_path)
 
 
 @pytest.mark.parametrize("output", ("line", "json"))
@@ -59,21 +80,21 @@ def test_calculate(
     ("version", "sha", "checksum", "code"),
     (
         # Checksum of the configuration does not match
-        (_VERSION, _SHA, "randomChecksumNonExistent", 1),
+        (None, None, "randomChecksumNonExistent", 1),
         # Neither version, nor sha will exist in this git tree
-        ("99999.99999.99999", "randomShaNonExistent", _CHECKSUM, 1),
+        ("99999.99999.99999", "randomShaNonExistent", None, 1),
         # Sha is within the tree, but corresponds to a different version
-        ("99999.99999.99999", _SHA, _CHECKSUM, 1),
+        ("99999.99999.99999", None, None, 1),
         # Version is within the tree, but sha is not
-        (_VERSION, "randomShaNonExistent", _CHECKSUM, 1),
+        (None, "randomShaNonExistent", None, 1),
         # Current version and its sha counterpart verify successfully
-        (_VERSION, _SHA, _CHECKSUM, 0),
+        (None, None, None, 0),
     ),
 )
 def test_verify(
-    version: str,
-    sha: str,
-    checksum: str,
+    version: str | None,
+    sha: str | None,
+    checksum: str | None,
     code: typing.Literal[0, 1],
 ) -> None:
     """Test `verify` command.
@@ -82,15 +103,23 @@ def test_verify(
 
     Args:
         version:
-            Version to test.
+            Version to test (`None` for the current one).
         sha:
-            Sha to verify version against.
+            Sha to verify version against (`None` for the current one).
         checksum:
-            Checksum of the config file.
+            Checksum of the config file (`None` for the current one).
         code:
             Either `0` (proper execution) or `1` (error).
 
     """
+    # enq: tests verify the output of the private implementation directly
+    current = _subcommand._calculate(  # noqa: SLF001
+        argparse.Namespace(sha=True, checksum=True, format="line"),
+    ).split()
+    arguments = [
+        given if given is not None else calculated
+        for given, calculated in zip((version, sha, checksum), current, strict=True)
+    ]
     with pytest.raises(SystemExit) as e:
-        _cli.main(["verify", version, sha, checksum])
+        _cli.main(["verify", *arguments])
     assert e.value.code == code
