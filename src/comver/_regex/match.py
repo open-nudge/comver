@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import typing
 
 import git
@@ -134,10 +135,31 @@ def path(
 
     # Compare against the first parent (root commits against an empty tree),
     # not against the working tree (default of `commit.diff()`)
-    diffs = commit.diff(commit.parents[0] if commit.parents else git.NULL_TREE)
+    diffs = commit.diff(_base(commit))
     return not diffs or any(
         item(p, include, exclude) for diff in diffs for p in {diff.a_path, diff.b_path} if p is not None
     )
+
+
+def _base(commit: git.Commit) -> git.Commit | git.DiffConstants:
+    """Return what the commit's changes should be compared against.
+
+    Args:
+        commit:
+            The commit whose changes are compared.
+
+    Returns:
+        The first parent of the commit or an empty tree for root commits.
+
+    """
+    if not commit.parents:
+        return git.NULL_TREE
+    # Shallow clones keep parent SHAs but not the parent objects;
+    # boundary commits are treated as roots, like `git log` does
+    shallow = pathlib.Path(commit.repo.common_dir, "shallow")
+    if shallow.is_file() and commit.hexsha in shallow.read_text().split():
+        return git.NULL_TREE
+    return commit.parents[0]
 
 
 def _author(

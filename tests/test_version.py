@@ -217,6 +217,36 @@ def test_paths(
     assert tuple(actual) == versions
 
 
+def test_shallow(tmp_path: pathlib.Path) -> None:
+    """Shallow clone boundary commits are treated as root commits.
+
+    Their parents are recorded, but the parent objects are missing,
+    hence the changes are compared against an empty tree (like `git log`).
+
+    Args:
+        tmp_path:
+            Temporary directory where the repositories are created.
+
+    """
+    source = tmp_path / "source"
+    with git.Repo.init(source) as repo:
+        for message, path in (("feat: a", "src/a.py"), ("fix: b", "src/b.py")):
+            file = source / path
+            file.parent.mkdir(parents=True, exist_ok=True)
+            _ = file.write_text(message)
+            _ = repo.index.add([path])
+            _ = repo.index.commit(message)
+
+    # Local path clones ignore `--depth`, `file://` URL is required
+    with git.Repo.clone_from(source.as_uri(), tmp_path / "clone", depth=1) as clone:
+        outputs = [
+            (output.commit, f"{output.version}")
+            for output in comver.Version.from_git(path_includes=["src/*"], repository=clone)
+        ]
+        # Only b commit is present in a shallow clone
+        assert outputs == [(clone.head.commit, "0.0.1")]
+
+
 def test_unrecognized_error() -> None:
     """Unrecognized message raises if `unrecognized_message="error"`."""
     with pytest.raises(comver.error.MessageUnrecognizedError):
