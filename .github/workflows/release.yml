@@ -41,7 +41,7 @@ jobs:
     # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
     # yamllint disable rule:line-length
     # enq: temporary, opentemplate main commits are untagged (no release yet)
-    uses: "open-nudge/opentemplate/.github/workflows/_release.yml@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+    uses: "open-nudge/opentemplate/.github/workflows/_release.yml@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
     # yamllint enable rule:line-length
 
   release-draft:
@@ -54,7 +54,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo-and-containers: true
           egress-policy: "block"
@@ -76,7 +76,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           directory: "${{ runner.temp }}/draft"
@@ -132,7 +132,7 @@ jobs:
     # https://github.com/pypi/warehouse/issues/11096
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo: true
           egress-policy: "block"
@@ -157,7 +157,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/dist-download@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/dist-download@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           digests: "${{ needs.release.outputs.digests }}"
@@ -182,7 +182,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo-and-containers: true
           egress-policy: "block"
@@ -207,7 +207,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25" # v2.22.1
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo-and-containers: true
           egress-policy: "block"
@@ -235,7 +235,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/digests-verify@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/digests-verify@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           directory: "${{ runner.temp }}/docs"
@@ -245,7 +245,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/pages-update@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/pages-update@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           archive: "${{ runner.temp }}/docs/site-${{ github.sha }}.tar"
@@ -254,7 +254,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/git-setup@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
       - name: "Commit documentation"
         # enq: shell indentation is more readable
@@ -291,7 +291,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25" # v2.22.1
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo-and-containers: true
           egress-policy: "block"

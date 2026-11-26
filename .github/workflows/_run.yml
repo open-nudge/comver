@@ -122,7 +122,7 @@ jobs:
     runs-on: "${{ inputs.os }}"
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo-and-containers: true
           egress-policy: "${{ inputs.egress-policy }}"
@@ -196,19 +196,19 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/reproducibility-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/reproducibility-setup@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
       - name: "Setup git credentials"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/git-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/git-setup@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
       - name: "Setup uv"
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/uv-setup@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/uv-setup@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           group: "${{ inputs.group }}"

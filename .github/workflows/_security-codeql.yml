@@ -53,7 +53,7 @@ jobs:
       CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
     steps:
       - name: "Harden Runner"
-        uses: "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43" # v2.22.3
+        uses: "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" # v2.23.0
         with:
           disable-sudo: true
           egress-policy: "block"
@@ -70,7 +70,7 @@ jobs:
           ref: "${{ inputs.ref }}"
           persist-credentials: false
       - name: "Initialize CodeQL"
-        uses: "github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370" # v4.39.1
+        uses: "github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066" # v4.39.3
         with:
           languages: "actions"
           build-mode: "none"
@@ -79,7 +79,7 @@ jobs:
           tools: "linked"
       # Uploaded to the Security tab by the caller (like other tools)
       - name: "Perform CodeQL analysis"
-        uses: "github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370" # v4.39.1
+        uses: "github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066" # v4.39.3
         with:
           # Same as the upload category (see _security-upload.yml)
           category: "/tool:codeql/scope:workflows/language:actions"
@@ -96,7 +96,7 @@ jobs:
         # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
         # yamllint disable rule:line-length
         # enq: temporary, opentemplate main commits are untagged (no release yet)
-        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+        uses: "open-nudge/opentemplate/.github/actions/sarif-upload@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
         # yamllint enable rule:line-length
         with:
           name: "${{ inputs.name }}"
