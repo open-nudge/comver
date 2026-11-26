@@ -65,7 +65,7 @@ runs:
       # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
       # yamllint disable rule:line-length
       # enq: temporary, opentemplate main commits are untagged (no release yet)
-      uses: "open-nudge/opentemplate/.github/actions/digests@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      uses: "open-nudge/opentemplate/.github/actions/digests@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
       # yamllint enable rule:line-length
       with:
         paths: "${{ inputs.file }}"
@@ -77,14 +77,14 @@ runs:
       # enq: pinned template reference (<repo>/<path>@<sha>) cannot be broken
       # yamllint disable rule:line-length
       # enq: temporary, opentemplate main commits are untagged (no release yet)
-      uses: "open-nudge/opentemplate/.github/actions/sarif-summary@a883a2557fb144a77b8e11c9a5d3e278807960d3" # zizmor: ignore[stale-action-refs]
+      uses: "open-nudge/opentemplate/.github/actions/sarif-summary@3cf3b510a4d056c4c12719ea59eb71003a21ae70" # zizmor: ignore[stale-action-refs]
       # yamllint enable rule:line-length
       with:
         file: "${{ inputs.file }}"
     - name: "Upload SARIF file to GitHub Advanced Security Dashboard"
       if: >
         inputs.sarif == 'true'
-      uses: "github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370" # v4.39.1
+      uses: "github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066" # v4.39.3
       with:
         sarif_file: "${{ inputs.file }}"
         category: "${{ inputs.category }}"
